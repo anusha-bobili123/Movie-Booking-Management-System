@@ -57,7 +57,7 @@ def load_sheet(engine, df: pd.DataFrame, table: str, truncate: bool = False):
         if truncate:
             conn.execute(text(f"TRUNCATE TABLE {table} CASCADE"))
             print(f"  ✂️  Truncated '{table}'")
-        df.to_sql(table, con=conn, if_exists="append", index=False, method="multi")
+        df.to_sql(table, con=conn, if_exists="replace", index=False, method="multi")
     print(f"  ✅ Loaded {len(df):,} rows → '{table}'")
 
 
