@@ -1,0 +1,248 @@
+{% extends "theatre_owner/base_owner.html" %}
+{% block title %}Manage Shows – CineVerse{% endblock %}
+{% block page_title %}Manage Shows{% endblock %}
+{% block content %}
+<style>
+.ms-table-wrap{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;}
+.ms-table{width:100%;border-collapse:collapse;}
+.ms-table th{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.4);font-size:.62rem;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.ms-table td{padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:rgba(255,255,255,0.8);font-size:.85rem;vertical-align:middle;}
+.ms-table tr:last-child td{border-bottom:none;}
+.ms-table tr:hover td{background:rgba(255,255,255,0.02);}
+.ms-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:700;}
+.ms-badge.upcoming{background:rgba(99,102,241,0.18);color:#818cf8;border:1px solid rgba(99,102,241,0.3);}
+.ms-badge.today{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+.ms-badge.past{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.1);}
+.ms-seats{display:flex;align-items:center;gap:4px;font-size:.8rem;}
+.ms-seats.good{color:#4ade80;}.ms-seats.warn{color:#fbbf24;}.ms-seats.low{color:#f87171;}
+.ms-action-btn{padding:5px 12px;border-radius:6px;font-size:.72rem;font-weight:600;border:1px solid;cursor:pointer;transition:all .15s;}
+.ms-edit{background:rgba(99,102,241,0.12);border-color:rgba(99,102,241,0.3);color:#818cf8;}
+.ms-edit:hover{background:rgba(99,102,241,0.25);}
+.ms-del{background:rgba(229,9,20,0.1);border-color:rgba(229,9,20,0.25);color:#f87171;}
+.ms-del:hover{background:rgba(229,9,20,0.22);}
+.ms-stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
+.ms-stat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 20px;flex:1;min-width:130px;}
+.ms-stat-num{font-size:1.6rem;font-weight:900;color:#fff;}
+.ms-stat-lbl{font-size:.7rem;color:rgba(255,255,255,0.35);margin-top:3px;font-weight:600;}
+
+/* Edit Modal */
+#editShowModal .modal-content{background:#1a1d2e;border:1px solid rgba(255,255,255,0.1);border-radius:14px;color:#fff;}
+#editShowModal .modal-header{border-bottom:1px solid rgba(255,255,255,0.08);padding:20px 24px;}
+#editShowModal .modal-footer{border-top:1px solid rgba(255,255,255,0.08);padding:16px 24px;}
+#editShowModal .form-label{font-size:.78rem;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;}
+#editShowModal .form-control{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:8px;}
+#editShowModal .form-control:focus{background:rgba(255,255,255,0.09);border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.2);color:#fff;}
+</style>
+
+<div style="padding:24px 20px;">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+      <h4 class="mb-1 fw-bold">Manage Shows</h4>
+      <p class="text-muted small mb-0">{{ shows|length }} show(s) scheduled across your theatres</p>
+    </div>
+    <a href="{{ url_for('theatre_owner.my_shows') }}" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;">
+      <i class="fas fa-plus me-1"></i>Add New Show
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="ms-stats-row">
+    <div class="ms-stat">
+      <div class="ms-stat-num">{{ shows|length }}</div>
+      <div class="ms-stat-lbl">Total Shows</div>
+    </div>
+    <div class="ms-stat">
+      <div class="ms-stat-num" style="color:#4ade80;">{{ shows|selectattr('available_seats','gt',0)|list|length }}</div>
+      <div class="ms-stat-lbl">Active Shows</div>
+    </div>
+    <div class="ms-stat">
+      <div class="ms-stat-num" style="color:#818cf8;">{{ shows|map(attribute='available_seats')|sum }}</div>
+      <div class="ms-stat-lbl">Seats Available</div>
+    </div>
+    <div class="ms-stat">
+      <div class="ms-stat-num" style="color:#fbbf24;">{{ shows|selectattr('available_seats','lt',15)|list|length }}</div>
+      <div class="ms-stat-lbl">Low Availability</div>
+    </div>
+  </div>
+
+  <!-- Alert placeholder -->
+  <div id="ms-alert" style="display:none;" class="alert mb-3" role="alert"></div>
+
+  {% if shows %}
+  <div class="ms-table-wrap">
+    <table class="ms-table">
+      <thead>
+        <tr>
+          <th>Movie</th>
+          <th>Theatre / Screen</th>
+          <th>Date & Time</th>
+          <th>Seats</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in shows %}
+        <tr id="row-{{ s.show_id }}">
+          <td><div class="fw-semibold">{{ s.movie_title }}</div></td>
+          <td>
+            <div style="font-size:.82rem;">{{ s.theatre_name }}</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,0.3);">Screen {{ s.screen_number }}</div>
+          </td>
+          <td>
+            <div class="fw-semibold" id="date-{{ s.show_id }}">{{ s.show_date }}</div>
+            <div style="font-size:.75rem;color:rgba(255,255,255,0.4);" id="time-{{ s.show_id }}">{{ s.start_time }}</div>
+          </td>
+          <td>
+            {% set seats = s.available_seats %}
+            <span class="ms-seats {% if seats > 30 %}good{% elif seats > 10 %}warn{% else %}low{% endif %}" id="seats-{{ s.show_id }}">
+              <i class="fas fa-circle" style="font-size:.4rem;"></i> {{ seats }}
+            </span>
+          </td>
+          <td class="fw-semibold" id="price-{{ s.show_id }}">₹{{ s.price_per_ticket }}</td>
+          <td>
+            <span class="ms-badge upcoming">Scheduled</span>
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <button class="ms-action-btn ms-edit"
+                onclick="openEditModal('{{ s.show_id }}','{{ s.show_date }}','{{ s.start_time }}','{{ s.price_per_ticket }}','{{ s.available_seats }}')">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <form method="POST" action="/theatre-owner/shows/{{ s.show_id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this show?')">
+                <button type="submit" class="ms-action-btn ms-del"><i class="fas fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px 20px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;">
+    <div style="font-size:3rem;margin-bottom:14px;">🎭</div>
+    <h5 style="color:rgba(255,255,255,0.5);">No Shows Scheduled</h5>
+    <p style="color:rgba(255,255,255,0.25);font-size:.85rem;">Add shows for your theatres to see them here.</p>
+    <a href="{{ url_for('theatre_owner.my_shows') }}" class="btn btn-sm mt-2" style="background:#6366f1;color:#fff;">Add First Show</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== EDIT SHOW MODAL ===== -->
+<div class="modal fade" id="editShowModal" tabindex="-1" aria-labelledby="editShowModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="editShowModalLabel"><i class="fas fa-edit me-2 text-indigo-400"></i>Edit Show</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 py-3">
+        <input type="hidden" id="edit_show_id">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Show Date</label>
+            <input type="date" class="form-control" id="edit_show_date">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Start Time</label>
+            <input type="time" class="form-control" id="edit_start_time">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Price per Ticket (₹)</label>
+            <input type="number" class="form-control" id="edit_price" min="1" step="0.01" placeholder="e.g. 250">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Available Seats</label>
+            <input type="number" class="form-control" id="edit_seats" min="0" placeholder="e.g. 100">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm px-4 fw-bold" id="saveEditBtn"
+          style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;"
+          onclick="saveEdit()">
+          <span id="saveEditSpinner" class="spinner-border spinner-border-sm me-1 d-none"></span>
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openEditModal(showId, showDate, startTime, price, seats) {
+  document.getElementById('edit_show_id').value   = showId;
+  document.getElementById('edit_show_date').value = showDate;
+  document.getElementById('edit_start_time').value = startTime;
+  document.getElementById('edit_price').value     = price;
+  document.getElementById('edit_seats').value     = seats;
+  var modal = new bootstrap.Modal(document.getElementById('editShowModal'));
+  modal.show();
+}
+
+function showAlert(msg, type) {
+  var el = document.getElementById('ms-alert');
+  el.className = 'alert alert-' + type + ' mb-3';
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display='none'; }, 4000);
+}
+
+function saveEdit() {
+  var showId    = document.getElementById('edit_show_id').value;
+  var showDate  = document.getElementById('edit_show_date').value;
+  var startTime = document.getElementById('edit_start_time').value;
+  var price     = document.getElementById('edit_price').value;
+  var seats     = document.getElementById('edit_seats').value;
+
+  if (!showDate || !startTime || !price || !seats) {
+    showAlert('Please fill in all fields.', 'warning');
+    return;
+  }
+
+  var btn = document.getElementById('saveEditBtn');
+  var spinner = document.getElementById('saveEditSpinner');
+  btn.disabled = true;
+  spinner.classList.remove('d-none');
+
+  fetch('/theatre-owner/shows/' + showId + '/edit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      show_date: showDate,
+      start_time: startTime,
+      price_per_ticket: parseFloat(price),
+      available_seats: parseInt(seats)
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btn.disabled = false;
+    spinner.classList.add('d-none');
+    if (data.success) {
+      // Update row in-place so user sees change without reload
+      var dateEl = document.getElementById('date-' + showId);
+      var timeEl = document.getElementById('time-' + showId);
+      var seatsEl = document.getElementById('seats-' + showId);
+      var priceEl = document.getElementById('price-' + showId);
+      if (dateEl) dateEl.textContent = showDate;
+      if (timeEl) timeEl.textContent = startTime;
+      if (seatsEl) seatsEl.innerHTML = '<i class="fas fa-circle" style="font-size:.4rem;"></i> ' + seats;
+      if (priceEl) priceEl.textContent = '₹' + parseFloat(price).toFixed(2);
+      bootstrap.Modal.getInstance(document.getElementById('editShowModal')).hide();
+      showAlert('Show updated successfully!', 'success');
+    } else {
+      showAlert(data.message || 'Update failed.', 'danger');
+    }
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    spinner.classList.add('d-none');
+    showAlert('Network error. Please try again.', 'danger');
+  });
+}
+</script>
+{% endblock %}

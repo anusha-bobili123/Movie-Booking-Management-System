@@ -1,0 +1,117 @@
+{% extends "theatre_owner/base_owner.html" %}
+{% block title %}Screen Management – CineVerse{% endblock %}
+{% block page_title %}Screen Management{% endblock %}
+{% block content %}
+<style>
+.sm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:28px;}
+.sm-card{background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);border-radius:14px;padding:20px;transition:all .2s;}
+.sm-card:hover{border-color:rgba(99,102,241,0.4);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+.sm-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:14px;box-shadow:0 4px 14px rgba(99,102,241,0.35);}
+.sm-screen-num{font-size:1rem;font-weight:800;color:#fff;margin-bottom:2px;}
+.sm-theatre{font-size:.75rem;color:rgba(255,255,255,0.35);margin-bottom:12px;}
+.sm-stats{display:flex;gap:10px;}
+.sm-stat{flex:1;background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;text-align:center;}
+.sm-stat-num{font-size:1.1rem;font-weight:800;color:#818cf8;}
+.sm-stat-lbl{font-size:.62rem;color:rgba(255,255,255,0.28);margin-top:1px;text-transform:uppercase;letter-spacing:.5px;}
+.sm-add-btn{background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;border-radius:10px;padding:11px 24px;color:#fff;font-weight:700;font-size:.88rem;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(99,102,241,0.35);}
+.sm-add-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(99,102,241,0.45);}
+.sm-modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+.sm-modal-overlay.active{display:flex;}
+.sm-modal{background:#12121f;border:1px solid rgba(255,255,255,0.1);border-radius:16px;width:92%;max-width:480px;padding:28px;}
+.sm-modal h5{color:#fff;font-weight:800;margin-bottom:20px;}
+.form-label{font-size:.78rem;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:5px;}
+.form-control,.form-select{background:rgba(255,255,255,0.05)!important;border:1px solid rgba(255,255,255,0.1)!important;color:#fff!important;border-radius:8px;}
+.form-select option{background:#1a1a2e;}
+</style>
+
+<div style="padding:24px 20px;">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+      <h4 class="mb-1 fw-bold">Screen Management</h4>
+      <p class="text-muted small mb-0">{{ screens|length }} screen(s) across your theatres</p>
+    </div>
+    <button class="sm-add-btn" onclick="openAddModal()"><i class="fas fa-plus me-2"></i>Add Screen</button>
+  </div>
+
+  {% if screens %}
+  <div class="sm-grid">
+    {% for sc in screens %}
+    <div class="sm-card">
+      <div class="sm-icon">🖥️</div>
+      <div class="sm-screen-num">Screen {{ sc.screen_number }}</div>
+      <div class="sm-theatre"><i class="fas fa-building" style="font-size:.55rem;color:#6366f1;"></i> {{ sc.theatre_name }}</div>
+      <div class="sm-stats">
+        <div class="sm-stat">
+          <div class="sm-stat-num">{{ sc.total_seats }}</div>
+          <div class="sm-stat-lbl">Total Seats</div>
+        </div>
+        <div class="sm-stat">
+          <div class="sm-stat-num" style="color:#fbbf24;">{{ sc.show_count }}</div>
+          <div class="sm-stat-lbl">Shows</div>
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;flex:1;" onclick="alert('Edit Screen {{ sc.screen_id }}')">
+          <i class="fas fa-edit me-1"></i>Edit
+        </button>
+        <button class="btn btn-sm" style="background:rgba(229,9,20,0.1);border:1px solid rgba(229,9,20,0.25);color:#f87171;font-size:.7rem;flex:1;" onclick="alert('Are you sure to delete Screen {{ sc.screen_number }}?')">
+          <i class="fas fa-trash me-1"></i>Remove
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px 20px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;">
+    <div style="font-size:3rem;margin-bottom:14px;">🖥️</div>
+    <h5 style="color:rgba(255,255,255,0.45);">No Screens Yet</h5>
+    <p style="color:rgba(255,255,255,0.22);font-size:.85rem;">Add screens to your theatres to manage them here.</p>
+    <button class="sm-add-btn mt-2" onclick="openAddModal()">Add First Screen</button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ADD SCREEN MODAL -->
+<div class="sm-modal-overlay" id="addScreenModal">
+  <div class="sm-modal">
+    <h5><i class="fas fa-plus-circle me-2" style="color:#6366f1;"></i>Add New Screen</h5>
+    <form method="POST" action="/theatre-owner/screens/add">
+      <div class="mb-3">
+        <label class="form-label">Theatre *</label>
+        <select name="theatre_id" class="form-select" required>
+          <option value="">Select Theatre</option>
+          {% for t in theatres %}
+          <option value="{{ t.theater_id }}">{{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Screen Number *</label>
+        <input type="number" name="screen_number" class="form-control" placeholder="e.g. 3" min="1" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Total Seats *</label>
+        <input type="number" name="total_seats" class="form-control" placeholder="e.g. 120" min="20" max="500" required>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Screen Type</label>
+        <select name="screen_type" class="form-select">
+          <option value="2D">2D</option>
+          <option value="3D">3D</option>
+          <option value="IMAX">IMAX</option>
+          <option value="4DX">4DX</option>
+        </select>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="sm-add-btn flex-fill"><i class="fas fa-save me-1"></i>Save Screen</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openAddModal(){ document.getElementById('addScreenModal').classList.add('active'); document.body.style.overflow='hidden'; }
+function closeAddModal(){ document.getElementById('addScreenModal').classList.remove('active'); document.body.style.overflow=''; }
+document.getElementById('addScreenModal').addEventListener('click',function(e){ if(e.target===this) closeAddModal(); });
+</script>
+{% endblock %}

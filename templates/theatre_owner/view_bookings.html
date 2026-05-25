@@ -1,0 +1,98 @@
+{% extends "theatre_owner/base_owner.html" %}
+{% block title %}View Bookings – CineVerse{% endblock %}
+{% block page_title %}View Bookings{% endblock %}
+{% block content %}
+<style>
+.vb-kpi-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;}
+.vb-kpi{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px 22px;flex:1;min-width:140px;transition:all .2s;}
+.vb-kpi:hover{border-color:rgba(99,102,241,0.35);}
+.vb-kpi-num{font-size:1.8rem;font-weight:900;}
+.vb-kpi-lbl{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:4px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.vb-table-wrap{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;}
+.vb-table{width:100%;border-collapse:collapse;}
+.vb-table th{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.35);font-size:.6rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.vb-table td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:.83rem;color:rgba(255,255,255,0.75);}
+.vb-table tr:last-child td{border-bottom:none;}
+.vb-table tr:hover td{background:rgba(255,255,255,0.02);}
+.vb-status{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.62rem;font-weight:700;}
+.vb-status.confirmed{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+.vb-status.cancelled{background:rgba(229,9,20,0.12);color:#f87171;border:1px solid rgba(229,9,20,0.25);}
+.vb-ref{font-family:monospace;font-size:.78rem;color:#818cf8;font-weight:700;}
+</style>
+
+<div style="padding:24px 20px;">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+      <h4 class="mb-1 fw-bold">View Bookings</h4>
+      <p class="text-muted small mb-0">All confirmed bookings at your theatres</p>
+    </div>
+    <div style="font-size:.78rem;color:rgba(255,255,255,0.35);">
+      <i class="fas fa-sync me-1"></i> Last updated: just now
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="vb-kpi-row">
+    <div class="vb-kpi">
+      <div class="vb-kpi-num" style="color:#818cf8;">{{ bookings|length }}</div>
+      <div class="vb-kpi-lbl">Total Bookings</div>
+    </div>
+    <div class="vb-kpi">
+      <div class="vb-kpi-num" style="color:#4ade80;">₹{{ "%.0f"|format(total_revenue) }}</div>
+      <div class="vb-kpi-lbl">Total Revenue</div>
+    </div>
+    <div class="vb-kpi">
+      <div class="vb-kpi-num" style="color:#fbbf24;">{{ bookings|selectattr('status','equalto','Confirmed')|list|length }}</div>
+      <div class="vb-kpi-lbl">Confirmed</div>
+    </div>
+    <div class="vb-kpi">
+      <div class="vb-kpi-num" style="color:#f87171;">{{ bookings|selectattr('status','equalto','Cancelled')|list|length }}</div>
+      <div class="vb-kpi-lbl">Cancelled</div>
+    </div>
+  </div>
+
+  {% if bookings %}
+  <div class="vb-table-wrap">
+    <table class="vb-table">
+      <thead>
+        <tr>
+          <th>Booking Ref</th>
+          <th>Movie</th>
+          <th>Theatre</th>
+          <th>Date / Time</th>
+          <th>Seats</th>
+          <th>Tickets</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td><span class="vb-ref">{{ b.booking_ref }}</span></td>
+          <td class="fw-semibold" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ b.movie_title }}</td>
+          <td style="font-size:.78rem;">{{ b.theatre_name }}</td>
+          <td>
+            <div class="fw-semibold" style="font-size:.82rem;">{{ b.show_date }}</div>
+            <div style="font-size:.72rem;color:rgba(255,255,255,0.35);">{{ b.show_time }}</div>
+          </td>
+          <td style="font-size:.78rem;color:rgba(255,255,255,0.55);">{{ b.seat_numbers or '—' }}</td>
+          <td class="text-center">{{ b.num_tickets }}</td>
+          <td class="fw-bold" style="color:#4ade80;">₹{{ "%.0f"|format(b.total_amount) }}</td>
+          <td>
+            <span class="vb-status {{ b.status|lower }}">{{ b.status }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px 20px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;">
+    <div style="font-size:3rem;margin-bottom:14px;">🎫</div>
+    <h5 style="color:rgba(255,255,255,0.45);">No Bookings Yet</h5>
+    <p style="color:rgba(255,255,255,0.22);font-size:.85rem;">Bookings for your theatres will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

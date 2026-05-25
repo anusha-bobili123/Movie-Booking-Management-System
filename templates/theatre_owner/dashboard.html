@@ -1,0 +1,293 @@
+{% extends "theatre_owner/base_owner.html" %}
+{% block title %}Owner Dashboard – CineVerse{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+{% block content %}
+
+<style>
+.kpi-link { text-decoration:none; display:block; }
+.kpi-link .kpi { transition: transform .18s, box-shadow .18s; cursor: pointer; }
+.kpi-link:hover .kpi { transform: translateY(-4px) scale(1.03); box-shadow: 0 8px 28px rgba(0,0,0,0.4); }
+</style>
+
+<!-- KPI Stats — all clickable -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('theatre_owner.my_theatres') }}" class="kpi-link">
+      <div class="kpi kpi-purple">
+        <div class="kpi-icon"><i class="fas fa-building"></i></div>
+        <div><div class="kpi-num">{{ stats.total_theatres }}</div><div class="kpi-lbl">My Theatres</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('theatre_owner.screen_management') }}" class="kpi-link">
+      <div class="kpi kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-desktop"></i></div>
+        <div><div class="kpi-num">{{ stats.total_screens }}</div><div class="kpi-lbl">Total Screens</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('theatre_owner.my_shows') }}" class="kpi-link">
+      <div class="kpi kpi-red">
+        <div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div>
+        <div><div class="kpi-num">{{ stats.total_shows }}</div><div class="kpi-lbl">Total Shows</div></div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('theatre_owner.view_bookings') }}" class="kpi-link">
+      <div class="kpi kpi-green">
+        <div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div>
+        <div><div class="kpi-num">{{ stats.total_bookings }}</div><div class="kpi-lbl">Bookings</div></div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Revenue KPI — clicks to analytics -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-md-6 col-xl-4">
+    <a href="{{ url_for('theatre_owner.analytics') }}" class="kpi-link">
+      <div class="kpi kpi-green" style="background:linear-gradient(135deg,rgba(39,174,96,.18),rgba(39,174,96,.08));border-color:rgba(39,174,96,.3);">
+        <div class="kpi-icon" style="background:rgba(39,174,96,.2);color:#4ade80;"><i class="fas fa-rupee-sign"></i></div>
+        <div>
+          <div class="kpi-num" style="color:#4ade80;">{{ "{:,}".format(stats.total_revenue) }}</div>
+          <div class="kpi-lbl">Total Revenue (₹)</div>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="pcard mb-4">
+  <div class="pcard-head"><span><i class="fas fa-bolt text-warning me-2"></i>Quick Actions</span></div>
+  <div class="pcard-body d-flex flex-wrap gap-2 py-3">
+    <a href="{{ url_for('theatre_owner.add_movie') }}" class="btn btn-danger fw-semibold">
+      <i class="fas fa-film me-2"></i>Add Movie
+    </a>
+    <a href="{{ url_for('theatre_owner.my_shows') }}" class="btn btn-outline-primary fw-semibold">
+      <i class="fas fa-plus me-2"></i>Add Show
+    </a>
+    <a href="{{ url_for('theatre_owner.manage_shows') }}" class="btn btn-outline-warning fw-semibold">
+      <i class="fas fa-calendar-check me-2"></i>Manage Shows
+    </a>
+    <a href="{{ url_for('theatre_owner.screen_management') }}" class="btn btn-outline-secondary fw-semibold">
+      <i class="fas fa-desktop me-2"></i>Screens
+    </a>
+    <a href="{{ url_for('theatre_owner.view_bookings') }}" class="btn btn-outline-success fw-semibold">
+      <i class="fas fa-ticket-alt me-2"></i>View Bookings
+    </a>
+    <a href="{{ url_for('theatre_owner.analytics') }}" class="btn fw-semibold" style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.35);">
+      <i class="fas fa-chart-bar me-2"></i>Analytics
+    </a>
+  </div>
+</div>
+
+<!-- MOVIES PANEL -->
+<div class="pcard mb-4">
+  <div class="pcard-head">
+    <span><i class="fas fa-film me-2 text-danger"></i>Movies Playing at My Theatres</span>
+    <a href="{{ url_for('theatre_owner.add_movie') }}" class="btn-panel btn-panel-red">+ Add Movie</a>
+  </div>
+  <div class="pcard-body p-0">
+    {% if movies_summary %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;padding:16px;">
+      {% for mv in movies_summary %}
+      <div style="background:rgba(229,9,20,0.05);border:1px solid rgba(229,9,20,0.15);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#e50914,#ff6b35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">🎬</div>
+        <div style="min-width:0;">
+          <div style="font-weight:700;color:#fff;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ mv.title }}</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">
+            {% if mv.genre %}<span class="bdg bdg-red" style="font-size:.65rem;padding:1px 6px;">{{ mv.genre }}</span>{% endif %}
+            {% if mv.language %}<span style="color:rgba(255,255,255,0.3);margin-left:4px;">{{ mv.language }}</span>{% endif %}
+          </div>
+          <div style="font-size:.72rem;color:#fbbf24;margin-top:4px;"><i class="fas fa-star me-1"></i>{{ mv.rating if mv.rating else 'N/A' }} · {{ mv.show_count }} show{{ 's' if mv.show_count != 1 else '' }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="fas fa-film fa-2x mb-2 d-block" style="opacity:.3;color:#e50914;"></i>
+      <p class="mb-2 small">No movies found for your theatres.</p>
+      <a href="{{ url_for('theatre_owner.add_movie') }}" class="btn btn-danger btn-sm"><i class="fas fa-plus me-1"></i>Add Movie</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SCREENS PANEL -->
+<div class="pcard mb-4">
+  <div class="pcard-head">
+    <span><i class="fas fa-desktop me-2" style="color:#818cf8;"></i>Screens</span>
+    <a href="{{ url_for('theatre_owner.screen_management') }}" class="btn-panel" style="background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3);">Manage Screens</a>
+  </div>
+  <div class="pcard-body p-0">
+    {% if screens_summary %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px;">
+      {% for sc in screens_summary %}
+      <div style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0;">🖥️</div>
+        <div>
+          <div style="font-weight:700;color:#fff;font-size:.9rem;">Screen {{ sc.screen_number }}</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,0.35);">{{ sc.theatre_name }}</div>
+          <div style="font-size:.72rem;color:#818cf8;margin-top:2px;">{{ sc.total_seats }} seats · {{ sc.show_count }} shows</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="fas fa-desktop fa-2x mb-2 d-block" style="opacity:.3;color:#818cf8;"></i>
+      <p class="mb-2 small">No screens found.</p>
+      <a href="{{ url_for('theatre_owner.screen_management') }}" class="btn btn-sm" style="background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3);">
+        <i class="fas fa-plus me-1"></i>Add Screens
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SHOWS PANEL -->
+<div class="pcard mb-4">
+  <div class="pcard-head">
+    <span><i class="fas fa-calendar-alt me-2" style="color:#fbbf24;"></i>Recent Shows</span>
+    <a href="{{ url_for('theatre_owner.my_shows') }}" class="btn-panel" style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.3);">View All Shows</a>
+  </div>
+  <div class="pcard-body p-0">
+    {% if top_shows %}
+    <div style="overflow-x:auto;">
+      <table class="ptable">
+        <thead>
+          <tr><th>Movie</th><th>Theatre</th><th>Screen</th><th>Date</th><th>Time</th><th>Price</th><th>Seats Left</th></tr>
+        </thead>
+        <tbody>
+          {% for s in top_shows %}
+          <tr>
+            <td class="fw-semibold small">{{ s.movie_title[:24] }}{% if s.movie_title|length > 24 %}…{% endif %}</td>
+            <td class="small text-muted">{{ s.theatre_name[:16] }}{% if s.theatre_name|length > 16 %}…{% endif %}</td>
+            <td><span class="bdg bdg-gray">#{{ s.screen_number }}</span></td>
+            <td class="small">{{ s.show_date }}</td>
+            <td><span class="bdg bdg-yellow">{{ s.start_time }}</span></td>
+            <td class="fw-bold text-danger small">₹{{ s.price_per_ticket|int if s.price_per_ticket else '—' }}</td>
+            <td>
+              {% if s.available_seats is not none %}
+                {% if s.available_seats > 20 %}<span class="bdg bdg-green">{{ s.available_seats }}</span>
+                {% elif s.available_seats > 5 %}<span class="bdg bdg-yellow">{{ s.available_seats }}</span>
+                {% else %}<span class="bdg bdg-red">{{ s.available_seats }}</span>{% endif %}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="fas fa-calendar-times fa-2x mb-2 d-block" style="opacity:.3;color:#fbbf24;"></i>
+      <p class="mb-2 small">No shows scheduled yet.</p>
+      <a href="{{ url_for('theatre_owner.my_shows') }}" class="btn btn-sm" style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.3);">
+        <i class="fas fa-plus me-1"></i>Add First Show
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- CREATE NEW THEATRE PANEL -->
+<div class="pcard mb-4">
+  <div class="pcard-head">
+    <span><i class="fas fa-plus-circle me-2" style="color:#4ade80;"></i>Create New Theatre</span>
+  </div>
+  <div class="pcard-body" style="padding:20px;">
+    <p style="color:rgba(255,255,255,0.4);font-size:.83rem;margin-bottom:20px;">Register a new theatre under your account.</p>
+    <div id="dashRegMsg" style="display:none;padding:10px 16px;border-radius:10px;margin-bottom:16px;font-size:.85rem;font-weight:600;"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+      <div>
+        <label style="color:rgba(255,255,255,0.45);font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;">Theatre Name *</label>
+        <input id="dash_reg_name" type="text" placeholder="e.g. PVR Grand Cinema" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#fff;font-size:.88rem;outline:none;">
+      </div>
+      <div>
+        <label style="color:rgba(255,255,255,0.45);font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;">State *</label>
+        <select id="dash_reg_state" onchange="dashLoadCities()" style="width:100%;background:rgba(20,20,40,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#fff;font-size:.88rem;outline:none;cursor:pointer;">
+          <option value="">Select State</option>
+        </select>
+      </div>
+      <div>
+        <label style="color:rgba(255,255,255,0.45);font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;">City *</label>
+        <select id="dash_reg_city" style="width:100%;background:rgba(20,20,40,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#fff;font-size:.88rem;outline:none;cursor:pointer;">
+          <option value="">Select State first</option>
+        </select>
+      </div>
+      <div>
+        <label style="color:rgba(255,255,255,0.45);font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;">Address *</label>
+        <input id="dash_reg_location" type="text" placeholder="e.g. Inorbit Mall, Madhapur" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 13px;color:#fff;font-size:.88rem;outline:none;">
+      </div>
+      <div>
+        <label style="color:rgba(255,255,255,0.45);font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;">Number of Screens</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input id="dash_reg_screens" type="range" min="1" max="10" value="3" oninput="document.getElementById('dashScreenVal').textContent=this.value" style="flex:1;accent-color:#e50914;">
+          <span id="dashScreenVal" style="color:#e50914;font-weight:700;font-size:1rem;min-width:20px;">3</span>
+          <span style="color:rgba(255,255,255,0.3);font-size:.78rem;">screens</span>
+        </div>
+        <p style="color:rgba(255,255,255,0.25);font-size:.7rem;margin-top:4px;margin-bottom:0;">120 seats per screen by default.</p>
+      </div>
+    </div>
+    <button onclick="dashSubmitTheatre()" id="dashRegBtn" style="margin-top:20px;background:linear-gradient(135deg,#e50914,#ff6b35);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 16px rgba(229,9,20,0.3);transition:all .2s;display:inline-flex;align-items:center;gap:8px;">
+      <i class="fas fa-building"></i>Register Theatre
+    </button>
+  </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', async function(){
+  try {
+    const res = await fetch('{{ url_for("theatre_owner.api_states") }}');
+    const data = await res.json();
+    const sel = document.getElementById('dash_reg_state');
+    if(sel){ data.states.forEach(s => { const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o); }); }
+  } catch(e){ console.error('States load error',e); }
+});
+async function dashLoadCities(){
+  const state=document.getElementById('dash_reg_state').value;
+  const cityEl=document.getElementById('dash_reg_city');
+  cityEl.innerHTML='<option value="">Loading...</option>';
+  if(!state){cityEl.innerHTML='<option value="">Select State first</option>';return;}
+  try{
+    const res=await fetch('/theatre-owner/api/cities/'+encodeURIComponent(state));
+    const data=await res.json();
+    cityEl.innerHTML='<option value="">Select City</option>';
+    data.cities.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cityEl.appendChild(o);});
+  }catch(e){cityEl.innerHTML='<option value="">Error loading cities</option>';}
+}
+async function dashSubmitTheatre(){
+  const btn=document.getElementById('dashRegBtn');
+  const msg=document.getElementById('dashRegMsg');
+  const name=document.getElementById('dash_reg_name').value.trim();
+  const state=document.getElementById('dash_reg_state').value;
+  const city=document.getElementById('dash_reg_city').value;
+  const location=document.getElementById('dash_reg_location').value.trim();
+  const screens=document.getElementById('dash_reg_screens').value;
+  if(!name||!city||!state||!location){
+    msg.style.cssText='display:block;background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.4);color:#ff6b6b;padding:10px 16px;border-radius:10px;font-size:.85rem;font-weight:600;';
+    msg.textContent='Please fill all required fields.';return;
+  }
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin me-2"></i>Registering…';
+  try{
+    const res=await fetch('{{ url_for("theatre_owner.register_theatre") }}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,city,state,location,screens:parseInt(screens)})});
+    const data=await res.json();
+    msg.style.display='block';
+    if(data.success){
+      msg.style.cssText='display:block;background:rgba(39,174,96,0.15);border:1px solid rgba(39,174,96,0.4);color:#4ade80;padding:10px 16px;border-radius:10px;font-size:.85rem;font-weight:600;';
+      msg.textContent=data.message;btn.innerHTML='<i class="fas fa-check me-2"></i>Registered!';
+      setTimeout(()=>location.reload(),1500);
+    }else{
+      msg.style.cssText='display:block;background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.4);color:#ff6b6b;padding:10px 16px;border-radius:10px;font-size:.85rem;font-weight:600;';
+      msg.textContent=data.message;btn.disabled=false;btn.innerHTML='<i class="fas fa-building me-2"></i>Register Theatre';
+    }
+  }catch(e){msg.textContent='Network error.';btn.disabled=false;btn.innerHTML='<i class="fas fa-building me-2"></i>Register Theatre';}
+}
+</script>
+{% endblock %}

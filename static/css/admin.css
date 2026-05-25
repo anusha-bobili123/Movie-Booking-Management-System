@@ -1,0 +1,6 @@
+/* admin.css — thin overrides; main layout in style.css */
+.panel-body { background: var(--dark, #0a0a0f); }
+.sidebar.owner-sidebar .sb-link.active { border-left-color: #00d4ff; }
+@media (max-width: 991px) {
+  .sidebar { position: fixed; }
+}

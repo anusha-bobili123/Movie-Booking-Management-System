@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}My Profile – CineVerse{% endblock %}
+{% block content %}
+<div style="background:linear-gradient(180deg,rgba(10,10,15,1),rgba(15,15,26,1));padding:32px 0">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3">
+      <div class="avatar-xl">{{ user.name[0].upper() }}</div>
+      <div>
+        <h3 class="text-white fw-bold mb-1">{{ user.name }}</h3>
+        <p class="text-white-50 mb-0 small"><i class="fas fa-envelope me-1"></i>{{ user.email }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="pcard mb-4">
+        <div class="pcard-head"><span><i class="fas fa-user-edit text-danger me-2"></i>Edit Profile</span></div>
+        <div class="pcard-body">
+          <form id="profileForm">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Full Name</label>
+              <input type="text" id="pName" class="form-control" value="{{ user.name }}" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Email Address</label>
+              <input type="email" class="form-control bg-light" value="{{ user.email }}" disabled>
+              <div class="form-text">Email cannot be changed.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Phone Number</label>
+              <input type="tel" id="pPhone" class="form-control" value="{{ user.phone or '' }}" placeholder="9876543210">
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-semibold">City</label>
+              <input type="text" id="pCity" class="form-control" value="{{ user.city or '' }}" placeholder="Your city">
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" id="saveBtn" class="btn btn-danger px-4 fw-semibold">
+                <i class="fas fa-save me-2"></i>Save Changes
+              </button>
+              <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary px-4">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <div class="pcard-head"><span><i class="fas fa-shield-alt text-danger me-2"></i>Account Info</span></div>
+        <div class="pcard-body">
+          <div class="detail-row"><span class="lbl">Role</span><span class="bdg bdg-blue">Customer</span></div>
+          <div class="detail-row"><span class="lbl">Member Since</span><span class="val">{{ user.created_at.strftime('%B %Y') if user.created_at else 'N/A' }}</span></div>
+          <div class="detail-row"><span class="lbl">Status</span><span class="bdg bdg-green">Active</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{{ url_for('static', filename='js/booking.js') }}"></script>{% endblock %}

@@ -1,0 +1,1013 @@
+{% extends "base.html" %}
+{% block title %}Select Seats – {{ show.movie_title }}{% endblock %}
+{% block content %}
+
+{% set cinematic_posters = [
+  'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&q=90',
+  'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&q=90',
+  'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&q=90',
+  'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400&q=90',
+  'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400&q=90',
+  'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400&q=90',
+  'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=400&q=90',
+  'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&q=90',
+  'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&q=90',
+  'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=400&q=90'
+] %}
+{% set movie_poster = cinematic_posters[(show.movie_title|length) % (cinematic_posters|length)] %}
+
+<!-- ── STEP INDICATOR: User is now on Step 2 — Seat Selection ── -->
+<div style="background:#0d0d1a;border-bottom:1px solid rgba(255,255,255,0.07);padding:10px 0;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:0;max-width:500px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;background:#27ae60;color:#fff;">✓</div>
+      <span style="font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#27ae60;">SHOW</span>
+    </div>
+    <div style="width:50px;height:1px;background:#27ae60;margin:0 6px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;background:#e50914;color:#fff;box-shadow:0 0 12px rgba(229,9,20,0.5);">2</div>
+      <span style="font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;">SEATS</span>
+    </div>
+    <div style="width:50px;height:1px;background:rgba(255,255,255,0.1);margin:0 6px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.15);">3</div>
+      <span style="font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.3);">PAYMENT</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BOOKING HEADER PANEL ── -->
+<div class="bk-header-panel">
+  <div class="bk-header-inner">
+    <!-- Back button -->
+    <a href="javascript:history.back()" class="bk-hdr-back"><i class="fas fa-arrow-left"></i></a>
+    <!-- Movie Poster -->
+    <img src="{{ movie_poster }}" alt="{{ show.movie_title }}" class="bk-hdr-poster" onerror="this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&q=90'">
+    <!-- Movie Info -->
+    <div class="bk-hdr-info">
+      <div class="bk-hdr-title">{{ show.movie_title }}</div>
+      <div class="bk-hdr-meta">
+        <span class="bk-hdr-badge">{{ show.language or '2D' }}</span>
+        <span class="bk-hdr-badge bk-badge-genre">{{ show.genre or 'Movie' }}</span>
+      </div>
+      <div class="bk-hdr-theatre"><i class="fas fa-map-marker-alt me-1"></i>{{ show.theatre_name }}, Screen {{ show.screen_number or '1' }}</div>
+    </div>
+    <!-- Ticket Count Badge -->
+    <div class="sk-ticket-count" id="ticketCountBadge"><i class="fas fa-pencil-alt me-1"></i><span id="ticketCountText">0 Tickets</span></div>
+  </div>
+</div>
+
+<!-- ── BOOKING SELECTION SUMMARY (replaces date strip — shows user's choices) ── -->
+<div class="bk-summary-bar">
+  <div class="bk-summary-item">
+    <div class="bk-summary-label"><i class="fas fa-film me-1"></i>Movie</div>
+    <div class="bk-summary-val">{{ show.movie_title }}</div>
+  </div>
+  <div class="bk-summary-divider"></div>
+  <div class="bk-summary-item">
+    <div class="bk-summary-label"><i class="fas fa-calendar me-1"></i>Date</div>
+    <div class="bk-summary-val">{{ show.show_date.strftime('%a, %d %b') if show.show_date else 'N/A' }}</div>
+  </div>
+  <div class="bk-summary-divider"></div>
+  <div class="bk-summary-item">
+    <div class="bk-summary-label"><i class="fas fa-building me-1"></i>Theater</div>
+    <div class="bk-summary-val">{{ show.theatre_name }}</div>
+  </div>
+  <div class="bk-summary-divider"></div>
+  <div class="bk-summary-item">
+    <div class="bk-summary-label"><i class="fas fa-clock me-1"></i>Time</div>
+    <div class="bk-summary-val">{{ show.start_time }}</div>
+  </div>
+</div>
+
+<!-- SHOW TIME TAB (kept minimal - only screen info, no repeated movie/theatre/time) -->
+<div class="sk-time-tabs">
+  <div class="sk-time-tab active" id="activeTimeTab">
+    <div class="sk-time-main" id="tabShowTime">{{ show.start_time }}</div>
+    <div class="sk-time-sub">{{ show.screen_number if show.screen_number else 'Main Screen' }}</div>
+  </div>
+</div>
+
+<div id="seatSection">
+
+<form id="bookForm">
+  <input type="hidden" id="priceVal" value="{{ show.price_per_ticket or 150 }}">
+  <input type="hidden" id="showIdVal" value="{{ show.show_id }}">
+  <input type="hidden" id="qtyInput" name="num_tickets" value="1">
+  <input type="hidden" id="payMethod" value="UPI">
+  <input type="hidden" id="selectedSeatsInput" name="seat_numbers" value="">
+
+  <!-- SEAT MAP AREA -->
+  <div class="sk-seat-area">
+    <div class="sk-zoom-controls">
+      <button type="button" onclick="zoomIn()"><i class="fas fa-plus"></i></button>
+      <button type="button" onclick="zoomOut()"><i class="fas fa-minus"></i></button>
+    </div>
+
+    <div class="sk-map-wrap" id="seatMapWrap">
+      <div class="sk-seat-map" id="seatMap">
+
+        <!-- PLATINUM SECTION -->
+        <div class="sk-category-label">&#8377;{{ (show.price_per_ticket * 1.25)|int if show.price_per_ticket else 350 }} PLATINUM</div>
+        <div class="sk-seat-row">
+          <div class="sk-row-label">A</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat avail" data-seat="A1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="A2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="A3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat avail" data-seat="A4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat avail" data-seat="A5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat avail" data-seat="A6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="A7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="A8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="A9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="A10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="A11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="A12" onclick="toggleSeat(this)">12</div>
+          </div>
+        </div>
+
+        <!-- GOLD SECTION -->
+        <div class="sk-category-label" style="margin-top:24px">&#8377;{{ show.price_per_ticket|int if show.price_per_ticket else 295 }} GOLD</div>
+
+        <!-- Row B -->
+        <div class="sk-seat-row">
+          <div class="sk-row-label">B</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat avail" data-seat="B1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="B2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="B3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat avail" data-seat="B4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat avail" data-seat="B5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat-gap"></div>
+            <div class="sk-seat avail" data-seat="B6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="B7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="B8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="B9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="B10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="B11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="B12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="B13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="B14" onclick="toggleSeat(this)">14</div>
+            <div class="sk-seat avail" data-seat="B15" onclick="toggleSeat(this)">15</div>
+            <div class="sk-seat avail" data-seat="B16" onclick="toggleSeat(this)">16</div>
+            <div class="sk-seat avail" data-seat="B17" onclick="toggleSeat(this)">17</div>
+            <div class="sk-seat avail" data-seat="B18" onclick="toggleSeat(this)">18</div>
+            <div class="sk-seat avail" data-seat="B19" onclick="toggleSeat(this)">19</div>
+            <div class="sk-seat avail" data-seat="B20" onclick="toggleSeat(this)">20</div>
+            <div class="sk-seat avail" data-seat="B21" onclick="toggleSeat(this)">21</div>
+          </div>
+        </div>
+        <!-- Row C -->
+        <div class="sk-seat-row">
+          <div class="sk-row-label">C</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat avail" data-seat="C1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="C2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="C3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat avail" data-seat="C4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat avail" data-seat="C5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat-gap"></div>
+            <div class="sk-seat avail" data-seat="C6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="C7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="C8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="C9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="C10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="C11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="C12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="C13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="C14" onclick="toggleSeat(this)">14</div>
+            <div class="sk-seat avail" data-seat="C15" onclick="toggleSeat(this)">15</div>
+            <div class="sk-seat avail" data-seat="C16" onclick="toggleSeat(this)">16</div>
+            <div class="sk-seat avail" data-seat="C17" onclick="toggleSeat(this)">17</div>
+            <div class="sk-seat avail" data-seat="C18" onclick="toggleSeat(this)">18</div>
+            <div class="sk-seat avail" data-seat="C19" onclick="toggleSeat(this)">19</div>
+            <div class="sk-seat avail" data-seat="C20" onclick="toggleSeat(this)">20</div>
+            <div class="sk-seat avail" data-seat="C21" onclick="toggleSeat(this)">21</div>
+          </div>
+        </div>
+        <!-- Row D -->
+        <div class="sk-seat-row">
+          <div class="sk-row-label">D</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat-gap" style="width:35px"></div>
+            <div class="sk-seat avail" data-seat="D1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="D2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="D3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat-gap"></div>
+            <div class="sk-seat avail" data-seat="D4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat avail" data-seat="D5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat avail" data-seat="D6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="D7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="D8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="D9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="D10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="D11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="D12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="D13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="D14" onclick="toggleSeat(this)">14</div>
+            <div class="sk-seat avail" data-seat="D15" onclick="toggleSeat(this)">15</div>
+            <div class="sk-seat avail" data-seat="D16" onclick="toggleSeat(this)">16</div>
+            <div class="sk-seat avail" data-seat="D17" onclick="toggleSeat(this)">17</div>
+            <div class="sk-seat avail" data-seat="D18" onclick="toggleSeat(this)">18</div>
+          </div>
+        </div>
+        <!-- Row E -->
+        <div class="sk-seat-row">
+          <div class="sk-row-label">E</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat-gap" style="width:35px"></div>
+            <div class="sk-seat avail" data-seat="E1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="E2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat-gap"></div>
+            <div class="sk-seat avail" data-seat="E3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat avail" data-seat="E4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat avail" data-seat="E5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat avail" data-seat="E6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="E7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="E8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="E9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="E10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="E11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="E12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="E13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="E14" onclick="toggleSeat(this)">14</div>
+            <div class="sk-seat avail" data-seat="E15" onclick="toggleSeat(this)">15</div>
+            <div class="sk-seat avail" data-seat="E16" onclick="toggleSeat(this)">16</div>
+            <div class="sk-seat avail" data-seat="E17" onclick="toggleSeat(this)">17</div>
+            <div class="sk-seat avail" data-seat="E18" onclick="toggleSeat(this)">18</div>
+          </div>
+        </div>
+        <!-- Rows F G H -->
+        <div class="sk-seat-row">
+          <div class="sk-row-label">F</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat-gap" style="width:35px"></div>
+            <div class="sk-seat avail" data-seat="F1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="F2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="F3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat avail" data-seat="F4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat-gap"></div>
+            <div class="sk-seat avail" data-seat="F5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat avail" data-seat="F6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="F7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="F8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="F9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="F10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="F11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="F12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="F13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="F14" onclick="toggleSeat(this)">14</div>
+            <div class="sk-seat avail" data-seat="F15" onclick="toggleSeat(this)">15</div>
+            <div class="sk-seat avail" data-seat="F16" onclick="toggleSeat(this)">16</div>
+            <div class="sk-seat avail" data-seat="F17" onclick="toggleSeat(this)">17</div>
+            <div class="sk-seat avail" data-seat="F18" onclick="toggleSeat(this)">18</div>
+          </div>
+        </div>
+        <div class="sk-seat-row">
+          <div class="sk-row-label">G</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat-gap" style="width:35px"></div>
+            <div class="sk-seat avail" data-seat="G1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="G2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="G3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat avail" data-seat="G4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat-gap"></div>
+            <div class="sk-seat avail" data-seat="G5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat avail" data-seat="G6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="G7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="G8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="G9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="G10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="G11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="G12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="G13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="G14" onclick="toggleSeat(this)">14</div>
+            <div class="sk-seat avail" data-seat="G15" onclick="toggleSeat(this)">15</div>
+            <div class="sk-seat avail" data-seat="G16" onclick="toggleSeat(this)">16</div>
+            <div class="sk-seat avail" data-seat="G17" onclick="toggleSeat(this)">17</div>
+            <div class="sk-seat avail" data-seat="G18" onclick="toggleSeat(this)">18</div>
+          </div>
+        </div>
+        <div class="sk-seat-row">
+          <div class="sk-row-label">H</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat-gap" style="width:35px"></div>
+            <div class="sk-seat avail" data-seat="H1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="H2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="H3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat avail" data-seat="H4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat-gap"></div>
+            <div class="sk-seat avail" data-seat="H5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat avail" data-seat="H6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="H7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="H8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="H9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="H10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="H11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="H12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="H13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="H14" onclick="toggleSeat(this)">14</div>
+            <div class="sk-seat avail" data-seat="H15" onclick="toggleSeat(this)">15</div>
+            <div class="sk-seat avail" data-seat="H16" onclick="toggleSeat(this)">16</div>
+            <div class="sk-seat avail" data-seat="H17" onclick="toggleSeat(this)">17</div>
+            <div class="sk-seat avail" data-seat="H18" onclick="toggleSeat(this)">18</div>
+          </div>
+        </div>
+
+        <!-- LOUNGERS SECTION -->
+        <div class="sk-category-label" style="margin-top:24px">&#8377;{{ (show.price_per_ticket * 1.1)|int if show.price_per_ticket else 295 }} LOUNGERS</div>
+        <div class="sk-seat-row">
+          <div class="sk-row-label">I</div>
+          <div class="sk-row-seats">
+            <div class="sk-seat avail" data-seat="I1" onclick="toggleSeat(this)">1</div>
+            <div class="sk-seat avail" data-seat="I2" onclick="toggleSeat(this)">2</div>
+            <div class="sk-seat avail" data-seat="I3" onclick="toggleSeat(this)">3</div>
+            <div class="sk-seat-gap" style="width:24px"></div>
+            <div class="sk-seat avail" data-seat="I4" onclick="toggleSeat(this)">4</div>
+            <div class="sk-seat avail" data-seat="I5" onclick="toggleSeat(this)">5</div>
+            <div class="sk-seat avail" data-seat="I6" onclick="toggleSeat(this)">6</div>
+            <div class="sk-seat avail" data-seat="I7" onclick="toggleSeat(this)">7</div>
+            <div class="sk-seat avail" data-seat="I8" onclick="toggleSeat(this)">8</div>
+            <div class="sk-seat avail" data-seat="I9" onclick="toggleSeat(this)">9</div>
+            <div class="sk-seat avail" data-seat="I10" onclick="toggleSeat(this)">10</div>
+            <div class="sk-seat avail" data-seat="I11" onclick="toggleSeat(this)">11</div>
+            <div class="sk-seat avail" data-seat="I12" onclick="toggleSeat(this)">12</div>
+            <div class="sk-seat avail" data-seat="I13" onclick="toggleSeat(this)">13</div>
+            <div class="sk-seat avail" data-seat="I14" onclick="toggleSeat(this)">14</div>
+          </div>
+        </div>
+
+        <!-- Screen -->
+        <div class="sk-screen-wrap">
+          <div class="sk-screen-shape"></div>
+          <div class="sk-screen-label">All eyes this way please</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="sk-legend">
+      <div class="sk-legend-item"><div class="sk-leg-box avail"></div> Available</div>
+      <div class="sk-legend-item"><div class="sk-leg-box selected"></div> Selected</div>
+      <div class="sk-legend-item"><div class="sk-leg-box sold"></div> Sold</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="sk-bottom-bar">
+    <div class="sk-bottom-info">
+      <div class="sk-bottom-seats" id="bottomSeats">Select seats above</div>
+      <div class="sk-bottom-price" id="bottomPrice">&#8377;0</div>
+    </div>
+    <button type="button" class="sk-pay-btn" id="skPayBtn" onclick="proceedToPayment()" disabled>
+      Pay Now <i class="fas fa-arrow-right ms-1"></i>
+    </button>
+  </div>
+</form>
+</div><!-- /seatSection -->
+
+<!-- PAYMENT MODAL (centered dialog) -->
+<div class="sk-pay-overlay" id="paymentPanel" style="display:none">
+  <div class="sk-pay-dialog" style="max-height:90vh;overflow-y:auto;">
+    <div class="sk-pay-dialog-header">
+      <div class="sk-pay-dialog-title"><i class="fas fa-shield-alt text-success me-2"></i>Secure Payment</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <!-- 3-minute payment countdown timer -->
+        <div id="payTimerBox" style="display:none;background:rgba(229,9,20,0.12);border:1px solid rgba(229,9,20,0.35);border-radius:8px;padding:4px 10px;align-items:center;gap:6px;">
+          <i class="fas fa-clock" style="color:#e50914;font-size:.75rem;"></i>
+          <span id="payTimerDisplay" style="color:#e50914;font-weight:800;font-size:.88rem;font-variant-numeric:tabular-nums;letter-spacing:1px;">03:00</span>
+        </div>
+        <button type="button" class="sk-pay-dialog-close" onclick="closePayment()"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+
+    <div class="sk-pay-dialog-summary">
+      <div class="sk-pay-movie">{{ show.movie_title }}</div>
+      <div class="sk-pay-detail">{{ show.theatre_name }} &bull; {{ show.show_date }} &bull; {{ show.start_time }}</div>
+      <div class="sk-pay-seats" id="paySeatsSummary">—</div>
+    </div>
+
+    <!-- F&B Section inside payment -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">🍿 Food &amp; Beverages</div>
+        <button type="button" onclick="toggleFnb()" id="fnbToggleBtn" style="background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.3);border-radius:6px;padding:4px 10px;color:#e50914;font-size:.72rem;font-weight:700;cursor:pointer;">+ Add Items</button>
+      </div>
+      <div id="fnbPanel" style="display:none;">
+        <div style="display:flex;flex-direction:column;gap:8px;" id="fnbList"></div>
+      </div>
+      <div id="fnbSummaryLine" style="display:none;background:rgba(229,9,20,0.08);border:1px solid rgba(229,9,20,0.2);border-radius:8px;padding:8px 12px;font-size:.8rem;color:rgba(255,255,255,0.7);">
+        <i class="fas fa-shopping-basket me-2" style="color:#e50914;"></i><span id="fnbSummaryText"></span>
+      </div>
+    </div>
+
+    <div class="sk-price-block">
+      <div class="sk-price-row"><span>Ticket &times; <span id="payQty">1</span></span><span id="paySubtotal">&#8377;0</span></div>
+      <div class="sk-price-row" id="fnbPriceRow" style="display:none;"><span>Food &amp; Beverages</span><span id="fnbPriceVal">&#8377;0</span></div>
+      <div class="sk-price-row"><span>Convenience Fee</span><span>&#8377;30</span></div>
+      <div class="sk-price-row total"><span>Total</span><span class="text-danger" id="payTotal">&#8377;0</span></div>
+    </div>
+
+    <div class="sk-pay-methods-label">Select Payment Method</div>
+    <div class="sk-pay-methods-row">
+      <div class="sk-pay-method active" data-method="UPI" onclick="selectMethod(this)">
+        <i class="fas fa-qrcode"></i><span>UPI / QR</span>
+      </div>
+      <div class="sk-pay-method" data-method="Card" onclick="selectMethod(this)">
+        <i class="fas fa-credit-card"></i><span>Card</span>
+      </div>
+      <div class="sk-pay-method" data-method="Net Banking" onclick="selectMethod(this)">
+        <i class="fas fa-university"></i><span>Net Banking</span>
+      </div>
+      <div class="sk-pay-method" data-method="Wallet" onclick="selectMethod(this)">
+        <i class="fas fa-wallet"></i><span>Wallet</span>
+      </div>
+    </div>
+
+    <!-- CREDIT/DEBIT CARD FORM (shown when Card is selected) -->
+    <div id="cardFormSection" style="display:none;margin-top:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
+      <div style="color:#fff;font-weight:700;font-size:.85rem;margin-bottom:14px;"><i class="fas fa-credit-card me-2 text-danger"></i>Card Details</div>
+      <div style="margin-bottom:12px;">
+        <label style="color:rgba(255,255,255,0.5);font-size:.72rem;font-weight:600;letter-spacing:.5px;display:block;margin-bottom:5px;">CARD NUMBER</label>
+        <input type="text" id="cardNumber" maxlength="19" placeholder="1234 5678 9012 3456"
+          oninput="formatCardNumber(this)"
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:10px 12px;font-size:.88rem;outline:none;font-family:monospace;letter-spacing:1px;">
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <label style="color:rgba(255,255,255,0.5);font-size:.72rem;font-weight:600;letter-spacing:.5px;display:block;margin-bottom:5px;">EXPIRY (MM/YY)</label>
+          <input type="text" id="cardExpiry" maxlength="5" placeholder="MM/YY"
+            oninput="formatExpiry(this)"
+            style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:10px 12px;font-size:.88rem;outline:none;">
+        </div>
+        <div style="flex:1;">
+          <label style="color:rgba(255,255,255,0.5);font-size:.72rem;font-weight:600;letter-spacing:.5px;display:block;margin-bottom:5px;">CVV</label>
+          <input type="password" id="cardCvv" maxlength="4" placeholder="•••"
+            style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:10px 12px;font-size:.88rem;outline:none;">
+        </div>
+      </div>
+      <div style="margin-bottom:4px;">
+        <label style="color:rgba(255,255,255,0.5);font-size:.72rem;font-weight:600;letter-spacing:.5px;display:block;margin-bottom:5px;">CARDHOLDER NAME</label>
+        <input type="text" id="cardName" placeholder="Name on card"
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:10px 12px;font-size:.88rem;outline:none;">
+      </div>
+    </div>
+
+    <button class="sk-confirm-btn" id="skConfirmBtn" onclick="submitPayment()">
+      <i class="fas fa-lock me-2"></i>Confirm &amp; Pay
+    </button>
+    <p class="sk-secure-note"><i class="fas fa-shield-alt me-1 text-success"></i>256-bit SSL secured payment</p>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="sk-qr-modal" id="qrModal" style="display:none">
+  <div class="sk-qr-box">
+    <button class="sk-qr-close" onclick="closeQR()"><i class="fas fa-times"></i></button>
+    <div class="sk-qr-header"><i class="fas fa-qrcode text-danger" style="font-size:1.4rem"></i><span>Scan &amp; Pay</span></div>
+    <p class="sk-qr-sub">Scan using PhonePe, GPay, Paytm or any UPI app</p>
+    <div style="background:#fff;border-radius:12px;padding:12px;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+      <div id="qrCodeDiv"></div>
+    </div>
+    <div class="sk-qr-amount-box" style="margin-top:14px;">
+      <div class="sk-qr-amt-label">Amount to Pay</div>
+      <div class="sk-qr-amt" id="qrAmountDisplay">&#8377;0</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/PhonePe_Logo.svg/120px-PhonePe_Logo.svg.png" alt="PhonePe" style="height:24px;" onerror="this.style.display='none'">
+        <div class="sk-qr-upi" style="font-weight:700;color:#5f259f;">7013528144@axl</div>
+      </div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,0.5);margin-top:4px;">Account Name: Anusha Bobili</div>
+    </div>
+    <div class="sk-qr-actions">
+      <button class="sk-qr-cancel" onclick="closeQR()"><i class="fas fa-times me-1"></i>Cancel</button>
+      <button class="sk-qr-done" id="qrDoneBtn" onclick="confirmPayment()"><i class="fas fa-check-circle me-1"></i>Payment Done</button>
+    </div>
+    <p class="sk-qr-note">Click "Payment Done" after completing payment</p>
+    <div style="margin-top:10px;padding:8px 14px;background:rgba(229,9,20,0.1);border:1px solid rgba(229,9,20,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <i class="fas fa-clock" style="color:#e50914;font-size:.78rem;"></i>
+      <span style="color:rgba(255,255,255,0.5);font-size:.75rem;font-weight:600;">Time remaining:</span>
+      <span id="qrTimerDisplay" style="color:#e50914;font-weight:800;font-size:.88rem;font-variant-numeric:tabular-nums;letter-spacing:1px;">03:00</span>
+    </div>
+  </div>
+</div>
+<div class="sk-qr-backdrop" id="qrBackdrop" style="display:none"></div>
+
+<style>
+/* ── BOOKING HEADER PANEL ── */
+.bk-header-panel { background:linear-gradient(135deg,#0d0820 0%,#0a0a18 100%);border-bottom:1px solid rgba(255,255,255,0.07);padding:14px 20px; }
+.bk-header-inner { display:flex;align-items:center;gap:14px; }
+.bk-hdr-back { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 11px;color:#ccc;text-decoration:none;font-size:.95rem;flex-shrink:0;transition:all .2s; }
+.bk-hdr-back:hover { color:#e50914;background:rgba(229,9,20,0.12); }
+.bk-hdr-poster { width:52px;height:72px;border-radius:7px;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,0.15);box-shadow:0 4px 18px rgba(0,0,0,.5); }
+.bk-hdr-info { flex:1;min-width:0; }
+.bk-hdr-title { font-size:1.05rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.bk-hdr-meta { display:flex;gap:6px;margin:5px 0; }
+.bk-hdr-badge { border:1px solid rgba(255,255,255,0.25);border-radius:3px;padding:1px 8px;font-size:.68rem;font-weight:700;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.05); }
+.bk-badge-genre { border-color:rgba(229,9,20,0.4);color:rgba(255,120,120,0.9);background:rgba(229,9,20,0.08); }
+.bk-hdr-theatre { font-size:.73rem;color:rgba(255,255,255,0.4); }
+
+/* ── BOOKING SELECTION SUMMARY BAR ── */
+.bk-summary-bar {
+  background:#0d0d1a;
+  border-bottom:2px solid rgba(229,9,20,0.25);
+  display:flex; align-items:stretch; overflow-x:auto;
+  scrollbar-width:none;
+}
+.bk-summary-bar::-webkit-scrollbar { display:none; }
+.bk-summary-item {
+  flex:1; min-width:90px; padding:12px 14px;
+  display:flex; flex-direction:column; gap:3px;
+}
+.bk-summary-label {
+  font-size:.6rem; font-weight:800; letter-spacing:1.2px; text-transform:uppercase;
+  color:rgba(229,9,20,0.8);
+}
+.bk-summary-val {
+  font-size:.82rem; font-weight:700; color:#fff;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.bk-summary-divider {
+  width:1px; background:rgba(255,255,255,0.07); flex-shrink:0; margin:8px 0;
+}
+
+/* ── Existing topbar override to remove old back button ── */
+.sk-topbar { background:rgba(10,10,15,0.97);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px;padding:12px 20px;position:sticky;top:0;z-index:200;backdrop-filter:blur(20px); }
+.sk-back { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:1rem;color:#ccc;cursor:pointer;text-decoration:none;padding:6px 10px;border-radius:8px;transition:all .2s; }
+.sk-back:hover { color:#e50914;background:rgba(229,9,20,0.12);border-color:rgba(229,9,20,0.3); }
+.sk-topbar-info { flex:1; }
+.sk-topbar-title { font-weight:700;font-size:.97rem;color:#fff; }
+.sk-topbar-sub { font-size:.75rem;color:rgba(255,255,255,0.45); }
+.sk-accessibility { color:rgba(255,255,255,0.3);font-size:1rem; }
+.sk-ticket-count { border:1.5px solid #e50914;border-radius:20px;padding:5px 14px;font-size:.8rem;color:#e50914;font-weight:600;white-space:nowrap;background:rgba(229,9,20,0.08); }
+.sk-time-tabs { display:flex;gap:0;background:rgba(15,15,26,0.98);border-bottom:1px solid rgba(255,255,255,0.07);padding:8px 20px; }
+.sk-time-tab { border:1.5px solid #27ae60;border-radius:6px;padding:6px 18px;text-align:center;cursor:pointer;margin-right:10px;background:#27ae60; }
+.sk-time-main { font-size:.9rem;font-weight:700;color:#fff; }
+.sk-time-sub { font-size:.65rem;color:rgba(255,255,255,.8); }
+/* ── 4D CINEMATIC SEAT AREA ── */
+.sk-seat-area {
+  background: radial-gradient(ellipse at 50% 0%, rgba(20,10,40,1) 0%, rgba(6,6,14,1) 60%);
+  min-height: calc(100vh - 180px);
+  padding: 28px 0 110px;
+  position: relative;
+  overflow: hidden;
+}
+.sk-seat-area::before {
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background: radial-gradient(ellipse at 50% -10%, rgba(100,80,255,0.12) 0%, transparent 55%),
+              radial-gradient(ellipse at 20% 80%, rgba(229,9,20,0.07) 0%, transparent 50%);
+}
+.sk-zoom-controls { position:fixed;right:18px;bottom:110px;z-index:100;display:flex;flex-direction:column;gap:8px; }
+.sk-zoom-controls button { width:38px;height:38px;border-radius:50%;background:rgba(25,25,45,0.92);border:1px solid rgba(255,255,255,0.15);color:#ccc;font-size:.9rem;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;transition:all .2s; }
+.sk-zoom-controls button:hover { background:#e50914;color:#fff;border-color:#e50914;box-shadow:0 0 16px rgba(229,9,20,0.5); }
+
+/* Map container — wide & scrollable */
+.sk-map-wrap { overflow:auto;padding:24px 30px;display:flex;justify-content:center;min-width:100%; }
+.sk-seat-map { display:inline-block;min-width:max-content;transform-origin:top center;transition:transform .3s cubic-bezier(.4,0,.2,1); }
+
+/* Category labels */
+.sk-category-label {
+  text-align:center;font-size:.72rem;font-weight:700;
+  color:rgba(255,255,255,0.45);letter-spacing:2px;
+  margin-bottom:14px;display:flex;align-items:center;gap:12px;
+}
+.sk-category-label::before,.sk-category-label::after { content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent); }
+
+/* Seat rows */
+.sk-seat-row { display:flex;align-items:center;gap:7px;margin-bottom:7px; }
+.sk-row-label { width:20px;font-size:.7rem;font-weight:700;color:rgba(255,255,255,0.28);text-align:right;flex-shrink:0;letter-spacing:.5px; }
+.sk-row-seats { display:flex;gap:5px;flex-wrap:nowrap; }
+.sk-seat-gap { width:22px;flex-shrink:0; }
+
+/* Individual seats — bigger, 4D style */
+.sk-seat {
+  width:34px;height:34px;
+  border-radius:6px 6px 3px 3px;
+  font-size:.62rem;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s cubic-bezier(.4,0,.2,1);
+  user-select:none;flex-shrink:0;
+  position:relative;
+}
+.sk-seat::after {
+  content:'';position:absolute;bottom:-3px;left:2px;right:2px;height:3px;
+  background:rgba(0,0,0,0.5);border-radius:0 0 4px 4px;
+}
+.sk-seat.avail { background:linear-gradient(180deg,rgba(20,30,60,1),rgba(10,18,45,1));border:1.5px solid #4e8bff;color:#7eb3ff;box-shadow:0 2px 8px rgba(78,139,255,0.18),inset 0 1px 0 rgba(255,255,255,0.06); }
+.sk-seat.avail:hover { background:linear-gradient(180deg,rgba(78,139,255,0.38),rgba(78,139,255,0.18));transform:translateY(-3px) scale(1.12);box-shadow:0 6px 18px rgba(78,139,255,0.5); }
+.sk-seat.selected { background:linear-gradient(180deg,#e50914,#c1070f);border-color:#e50914;color:#fff;box-shadow:0 4px 18px rgba(229,9,20,0.65);transform:translateY(-2px) scale(1.08); }
+.sk-seat.sold { background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.12);cursor:not-allowed;box-shadow:none; }
+
+/* 4D IMAX-style SCREEN */
+.sk-screen-wrap {
+  text-align:center;margin-top:44px;padding-bottom:14px;
+  position:relative;
+}
+.sk-screen-shape {
+  width:75%;max-width:640px;height:14px;margin:0 auto;
+  background:linear-gradient(90deg,transparent 0%,rgba(120,180,255,0.25) 15%,rgba(140,200,255,0.9) 50%,rgba(120,180,255,0.25) 85%,transparent 100%);
+  border-radius:60% 60% 0 0 / 100% 100% 0 0;
+  box-shadow:0 -2px 40px rgba(100,160,255,0.55),0 0 80px rgba(80,130,255,0.25);
+  filter:blur(0.5px);
+}
+.sk-screen-label {
+  font-size:.72rem;color:rgba(140,180,255,0.55);margin-top:10px;
+  letter-spacing:2.5px;text-transform:uppercase;
+  text-shadow:0 0 12px rgba(100,160,255,0.4);
+}
+.sk-legend { display:flex;justify-content:center;gap:24px;padding:14px;font-size:.75rem;color:rgba(255,255,255,0.4); }
+.sk-legend-item { display:flex;align-items:center;gap:6px; }
+.sk-leg-box { width:20px;height:20px;border-radius:4px; }
+.sk-leg-box.avail { background:rgba(10,18,45,0.9);border:1.5px solid #4e8bff; }
+.sk-leg-box.selected { background:#e50914; }
+.sk-leg-box.sold { background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1); }
+.sk-bottom-bar { position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(10,10,15,0.97);border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;padding:12px 20px;box-shadow:0 -4px 30px rgba(0,0,0,0.5);backdrop-filter:blur(20px); }
+.sk-bottom-seats { font-size:.8rem;color:rgba(255,255,255,0.45); }
+.sk-bottom-price { font-size:1.1rem;font-weight:700;color:#fff; }
+.sk-pay-overlay { position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);animation:fadeIn .2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.sk-pay-dialog { background:#12121f;border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:28px 28px 24px;width:90%;max-width:480px;box-shadow:0 20px 70px rgba(0,0,0,.6);animation:popIn .25s ease; }
+.sk-pay-dialog-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px; }
+.sk-pay-dialog-title { font-size:1rem;font-weight:700;color:#fff; }
+.sk-pay-dialog-close { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:32px;height:32px;cursor:pointer;color:#ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.sk-pay-dialog-summary { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;margin-bottom:16px; }
+.sk-pay-methods-label { font-size:.75rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px; }
+.sk-pay-methods-row { display:flex;gap:10px;margin-bottom:20px; }
+.sk-pay-method { flex:1;border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 6px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(255,255,255,0.03); }
+.sk-pay-method i { display:block;font-size:1.2rem;color:rgba(255,255,255,0.4);margin-bottom:4px; }
+.sk-pay-method span { font-size:.7rem;color:rgba(255,255,255,0.4); }
+.sk-pay-method.active { border-color:#e50914;background:rgba(229,9,20,0.1); }
+.sk-pay-method.active i,.sk-pay-method.active span { color:#e50914; }
+.sk-pay-btn { background:#e50914;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .2s;white-space:nowrap;box-shadow:0 4px 16px rgba(229,9,20,0.4); }
+.sk-pay-btn:hover:not(:disabled) { background:#c0000f;transform:translateY(-1px); }
+.sk-pay-btn:disabled { background:rgba(255,255,255,0.12);cursor:not-allowed;color:rgba(255,255,255,0.3);box-shadow:none; }
+.sk-pay-movie { font-weight:700;font-size:.97rem;color:#fff; }
+.sk-pay-detail { font-size:.78rem;color:rgba(255,255,255,0.45);margin-top:2px; }
+.sk-pay-seats { font-size:.8rem;color:#e50914;font-weight:600;margin-top:4px; }
+.sk-price-block { margin-bottom:20px; }
+.sk-price-row { display:flex;justify-content:space-between;padding:8px 0;font-size:.88rem;color:rgba(255,255,255,0.5);border-bottom:1px solid rgba(255,255,255,0.06); }
+.sk-price-row.total { font-weight:700;color:#fff;font-size:1rem;border-bottom:none; }
+.sk-confirm-btn { width:100%;background:#e50914;color:#fff;border:none;border-radius:12px;padding:16px;font-weight:700;font-size:1rem;cursor:pointer;transition:all .2s;box-shadow:0 6px 20px rgba(229,9,20,0.4); }
+.sk-confirm-btn:hover { background:#c0000f; }
+.sk-secure-note { text-align:center;font-size:.75rem;color:rgba(255,255,255,0.25);margin-top:10px;margin-bottom:0; }
+.sk-qr-modal { position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center; }
+.sk-qr-backdrop { position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:599;backdrop-filter:blur(6px); }
+.sk-qr-box { background:rgba(18,18,32,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;max-width:360px;width:90%;text-align:center;position:relative;z-index:601;box-shadow:0 20px 70px rgba(0,0,0,.6);animation:popIn .3s ease; }
+@keyframes popIn { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+.sk-qr-close { position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:30px;height:30px;cursor:pointer;color:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center; }
+.sk-qr-header { display:flex;align-items:center;justify-content:center;gap:10px;font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:6px; }
+.sk-qr-sub { font-size:.8rem;color:rgba(255,255,255,0.45);margin-bottom:20px; }
+.sk-qr-img-wrap { background:#fff;border:2px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px; }
+#qrCodeDiv canvas,#qrCodeDiv img { display:block; }
+.sk-qr-amount-box { background:rgba(255,255,255,0.05);border:1px solid rgba(229,9,20,0.2);border-radius:10px;padding:12px;margin-bottom:20px; }
+.sk-qr-amt-label { font-size:.75rem;color:rgba(255,255,255,0.45);margin-bottom:4px; }
+.sk-qr-amt { font-size:2rem;font-weight:800;color:#e50914; }
+.sk-qr-upi { font-size:.75rem;color:rgba(255,255,255,0.3);margin-top:4px; }
+.sk-qr-actions { display:flex;gap:10px; }
+.sk-qr-cancel { flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;cursor:pointer;font-size:.88rem;color:rgba(255,255,255,0.6); }
+.sk-qr-done { flex:2;background:#27ae60;color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;font-size:.9rem;cursor:pointer; }
+.sk-qr-done:hover { background:#219a52; }
+.sk-qr-note { font-size:.7rem;color:rgba(255,255,255,0.25);margin:12px 0 0; }
+@media(max-width:576px){.sk-pay-methods-row{flex-wrap:wrap}.sk-pay-method{min-width:calc(50% - 5px)}.sk-seat{width:24px;height:24px;font-size:.55rem}}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ── Seat Selection Page — No date strip; selection summary shown above ──
+
+let selectedSeats = [];
+const PRICE = parseInt(document.getElementById('priceVal').value) || 150;
+
+// Per-seat price based on category (row letter)
+function getSeatPrice(seatId) {
+  const row = seatId.charAt(0).toUpperCase();
+  if (row === 'A') return Math.round(PRICE * 1.25);   // PLATINUM
+  if (row === 'I') return Math.round(PRICE * 1.1);    // LOUNGERS
+  return PRICE;                                        // GOLD (B-H)
+}
+const CONVENIENCE = 30;
+let mapScale = 1;
+let currentPayMethod = 'UPI';
+let pendingBookingData = null;
+let qrGenerated = false;
+let fnbCart = {};
+let fnbOpen = false;
+
+// F&B items
+const FNB_ITEMS = [
+  {id:'popcorn_butter',emoji:'🍿',name:'Butter Popcorn (Lg)',price:180},
+  {id:'nachos',emoji:'🌮',name:'Nachos + Salsa',price:160},
+  {id:'cold_drink',emoji:'🥤',name:'Cold Drink (Lg)',price:90},
+  {id:'coffee',emoji:'☕',name:'Hot Coffee',price:120},
+  {id:'combo',emoji:'🎉',name:'Combo (Popcorn+Drink)',price:250},
+  {id:'hotdog',emoji:'🌭',name:'Hot Dog',price:140},
+];
+
+// Read snacks pre-selected from URL
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const snacks = params.get('snacks');
+  const snacksTotal = parseInt(params.get('snacks_total') || '0');
+  if (snacks && snacksTotal > 0) {
+    // Store as pre-selected note
+    window._preSnacksNote = snacks;
+    window._preSnacksTotal = snacksTotal;
+  }
+})();
+
+// Mark booked seats as sold — fetch real data from server
+const SHOW_ID_VAL = document.getElementById('showIdVal').value;
+(async function initBookedSeats(){
+  let bookedSeats = [];
+  try {
+    const resp = await fetch(`/user/api/booked-seats/${encodeURIComponent(SHOW_ID_VAL)}`);
+    if(resp.ok){
+      const data = await resp.json();
+      bookedSeats = data.booked_seats || [];
+    }
+  } catch(e){ /* network error — no seats pre-marked */ }
+
+  const bookedSet = new Set(bookedSeats.map(s => s.trim()));
+  document.querySelectorAll('.sk-seat.avail').forEach((seat) => {
+    const seatId = seat.dataset.seat;
+    if(bookedSet.has(seatId)){
+      seat.classList.remove('avail');
+      seat.classList.add('sold');
+      seat.onclick = null;
+    }
+  });
+})();
+
+async function toggleSeat(el) {
+  if (el.classList.contains('sold')) return;
+  const seat = el.dataset.seat;
+  if (el.classList.contains('selected')) {
+    // Deselect - unlock seat
+    el.classList.remove('selected'); el.classList.add('avail');
+    selectedSeats = selectedSeats.filter(s => s !== seat);
+    fetch(`/user/api/unlock-seats/${encodeURIComponent(SHOW_ID_VAL)}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({seats: [seat]})
+    }).catch(() => {});
+  } else {
+    if (selectedSeats.length >= 6) { alert('Max 6 seats per booking.'); return; }
+    // Try to lock the seat first
+    try {
+      const lockRes = await fetch(`/user/api/lock-seats/${encodeURIComponent(SHOW_ID_VAL)}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({seats: [seat]})
+      });
+      const lockData = await lockRes.json();
+      if (!lockData.success) {
+        // Seat was grabbed by someone else - mark as sold
+        el.classList.remove('avail'); el.classList.add('sold');
+        el.title = 'Just selected by another user';
+        alert(`Seat ${seat} was just selected by another user. Please pick a different seat.`);
+        return;
+      }
+    } catch(e) { /* network issue - allow selection anyway */ }
+    el.classList.remove('avail'); el.classList.add('selected');
+    selectedSeats.push(seat);
+  }
+  updateUI();
+}
+
+// Release locks when user leaves the page
+window.addEventListener('beforeunload', () => {
+  if (selectedSeats.length > 0) {
+    navigator.sendBeacon(`/user/api/unlock-seats/${encodeURIComponent(SHOW_ID_VAL)}`,
+      new Blob([JSON.stringify({seats: selectedSeats})], {type: 'application/json'}));
+  }
+});
+
+function calcFnbTotal() {
+  return FNB_ITEMS.reduce((s,i) => s + (fnbCart[i.id]||0)*i.price, 0);
+}
+
+function updateUI() {
+  const qty = selectedSeats.length;
+  const preSnacks = window._preSnacksTotal || 0;
+  const fnbTotal = calcFnbTotal();
+  const ticketTotal = selectedSeats.reduce((sum, s) => sum + getSeatPrice(s), 0);
+  // Bottom bar shows ONLY the ticket price (category-correct) — no convenience fee added here
+  document.getElementById('ticketCountText').textContent = qty + (qty === 1 ? ' Ticket' : ' Tickets');
+  document.getElementById('bottomSeats').textContent = qty ? selectedSeats.join(', ') : 'Select seats above';
+  document.getElementById('bottomPrice').textContent = '₹' + (qty > 0 ? ticketTotal : 0);
+  document.getElementById('skPayBtn').disabled = qty === 0;
+  document.getElementById('qtyInput').value = qty;
+  document.getElementById('selectedSeatsInput').value = selectedSeats.join(', ');
+}
+
+function zoomIn() { mapScale = Math.min(1.6, mapScale + 0.15); document.getElementById('seatMap').style.transform = `scale(${mapScale})`; }
+function zoomOut() { mapScale = Math.max(0.5, mapScale - 0.15); document.getElementById('seatMap').style.transform = `scale(${mapScale})`; }
+
+// --- F&B inside payment modal ---
+function renderFnbList() {
+  document.getElementById('fnbList').innerHTML = FNB_ITEMS.map(item => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;" id="fnbrow-${item.id}">
+      <span style="font-size:1.2rem;">${item.emoji}</span>
+      <span style="flex:1;color:#fff;font-size:.82rem;font-weight:600;">${item.name}</span>
+      <span style="color:#e50914;font-weight:700;font-size:.8rem;min-width:38px;text-align:right;">₹${item.price}</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;width:26px;height:26px;color:#fff;cursor:pointer;font-size:.75rem;" onclick="changeFnb('${item.id}',-1)">−</button>
+        <span id="fnbqty-${item.id}" style="color:#fff;font-weight:700;font-size:.88rem;min-width:16px;text-align:center;">${fnbCart[item.id]||0}</span>
+        <button style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;width:26px;height:26px;color:#fff;cursor:pointer;font-size:.75rem;" onclick="changeFnb('${item.id}',1)">+</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleFnb() {
+  fnbOpen = !fnbOpen;
+  const panel = document.getElementById('fnbPanel');
+  panel.style.display = fnbOpen ? 'block' : 'none';
+  document.getElementById('fnbToggleBtn').textContent = fnbOpen ? '− Hide' : '+ Add Items';
+  if (fnbOpen) renderFnbList();
+}
+
+function changeFnb(id, delta) {
+  fnbCart[id] = Math.max(0, Math.min(5, (fnbCart[id]||0) + delta));
+  const el = document.getElementById('fnbqty-' + id);
+  if (el) el.textContent = fnbCart[id];
+  updatePaymentTotal();
+}
+
+function updatePaymentTotal() {
+  const qty = selectedSeats.length;
+  const ticketSub = selectedSeats.reduce((sum, s) => sum + getSeatPrice(s), 0);
+  const fnbTotal = calcFnbTotal();
+  const preSnacks = window._preSnacksTotal || 0;
+  const grand = ticketSub + CONVENIENCE + fnbTotal + preSnacks;
+  document.getElementById('paySubtotal').textContent = '₹' + ticketSub;
+  document.getElementById('payTotal').textContent = '₹' + grand;
+  // F&B row
+  const fnbRow = document.getElementById('fnbPriceRow');
+  const allFnb = fnbTotal + preSnacks;
+  if (allFnb > 0) {
+    fnbRow.style.display = 'flex';
+    document.getElementById('fnbPriceVal').textContent = '₹' + allFnb;
+  } else {
+    fnbRow.style.display = 'none';
+  }
+  // Summary line
+  const items = FNB_ITEMS.filter(i=>(fnbCart[i.id]||0)>0).map(i=>i.name+'×'+fnbCart[i.id]).join(', ');
+  const preNote = window._preSnacksNote || '';
+  const allItems = [preNote, items].filter(Boolean).join(', ');
+  const summaryLine = document.getElementById('fnbSummaryLine');
+  if (allItems) {
+    summaryLine.style.display = 'block';
+    document.getElementById('fnbSummaryText').textContent = allItems;
+  } else {
+    summaryLine.style.display = 'none';
+  }
+  // Update QR amount if already shown
+  document.getElementById('qrAmountDisplay').textContent = '₹' + grand;
+}
+
+// ── Payment 3-minute countdown timer ──
+let _payTimerInterval = null;
+
+function startPaymentTimer() {
+  stopPaymentTimer();
+  let remaining = 3 * 60; // 3 minutes in seconds
+  const timerBox = document.getElementById('payTimerBox');
+  const timerDisp = document.getElementById('payTimerDisplay');
+  const qrDisp = document.getElementById('qrTimerDisplay');
+  if (timerBox) timerBox.style.display = 'flex';
+  function tick() {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    const formatted = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const color = remaining <= 30 ? '#ff0000' : '#e50914';
+    if (timerDisp) { timerDisp.textContent = formatted; timerDisp.style.color = color; }
+    if (qrDisp) { qrDisp.textContent = formatted; qrDisp.style.color = color; }
+    if (timerBox) timerBox.style.borderColor = remaining <= 30 ? 'rgba(255,0,0,0.6)' : 'rgba(229,9,20,0.35)';
+    if (remaining <= 0) {
+      stopPaymentTimer();
+      closePayment();
+      closeQR();
+      alert('⏰ Payment time expired (3 minutes). Please reselect your seats and try again.');
+    }
+    remaining--;
+  }
+  tick();
+  _payTimerInterval = setInterval(tick, 1000);
+}
+
+function stopPaymentTimer() {
+  if (_payTimerInterval) { clearInterval(_payTimerInterval); _payTimerInterval = null; }
+  const timerBox = document.getElementById('payTimerBox');
+  if (timerBox) timerBox.style.display = 'none';
+}
+
+function proceedToPayment() {
+  const qty = selectedSeats.length;
+  if (qty === 0) { alert('Please select at least one seat.'); return; }
+  fnbCart = {}; fnbOpen = false;
+  document.getElementById('paySeatsSummary').textContent = selectedSeats.join(', ');
+  document.getElementById('payQty').textContent = qty;
+  document.getElementById('fnbPanel').style.display = 'none';
+  document.getElementById('fnbToggleBtn').textContent = '+ Add Items';
+  updatePaymentTotal();
+  document.getElementById('paymentPanel').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  startPaymentTimer();
+}
+
+function closePayment() {
+  stopPaymentTimer();
+  document.getElementById('paymentPanel').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function selectMethod(el) {
+  document.querySelectorAll('.sk-pay-method').forEach(m => m.classList.remove('active'));
+  el.classList.add('active');
+  currentPayMethod = el.dataset.method;
+  // Show card form only when Card is selected
+  const cardForm = document.getElementById('cardFormSection');
+  if (cardForm) cardForm.style.display = (currentPayMethod === 'Card') ? 'block' : 'none';
+}
+
+async function submitPayment() {
+  const qty = selectedSeats.length;
+  const fnbTotal = calcFnbTotal();
+  const preSnacks = window._preSnacksTotal || 0;
+  const total = selectedSeats.reduce((sum, s) => sum + getSeatPrice(s), 0) + CONVENIENCE + fnbTotal + preSnacks;
+
+  // Validate card details if Card payment selected
+  if (currentPayMethod === 'Card') {
+    const cardNum = (document.getElementById('cardNumber')?.value || '').replace(/\s/g,'');
+    const expiry = (document.getElementById('cardExpiry')?.value || '').trim();
+    const cvv = (document.getElementById('cardCvv')?.value || '').trim();
+    const cardName = (document.getElementById('cardName')?.value || '').trim();
+    if (cardNum.length < 16) { alert('Please enter a valid 16-digit card number.'); return; }
+    if (!/^\d{2}\/\d{2}$/.test(expiry)) { alert('Please enter a valid expiry date (MM/YY).'); return; }
+    if (cvv.length < 3) { alert('Please enter a valid CVV.'); return; }
+    if (!cardName) { alert('Please enter the cardholder name.'); return; }
+  }
+
+  // Build snacks note for booking
+  const fnbItems = FNB_ITEMS.filter(i=>(fnbCart[i.id]||0)>0).map(i=>i.name+'×'+fnbCart[i.id]).join(', ');
+  const preNote = window._preSnacksNote || '';
+  const allSnacks = [preNote, fnbItems].filter(Boolean).join(', ');
+  pendingBookingData = {
+    num_tickets: qty,
+    payment_method: currentPayMethod,
+    seat_numbers: selectedSeats.join(', '),
+    total_amount: total,
+    snacks: allSnacks
+  };
+  if (currentPayMethod === 'UPI') {
+    showQR(total);
+  } else {
+    const btn = document.getElementById('skConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Processing…';
+    try {
+      const res = await fetch(window.location.href, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(pendingBookingData) });
+      const d = await res.json();
+      if (d.success) { stopPaymentTimer(); location.href = d.redirect; }
+      else { alert(d.message||'Booking failed.'); btn.disabled=false; btn.innerHTML='<i class="fas fa-lock me-2"></i>Confirm & Pay'; }
+    } catch { alert('Network error.'); btn.disabled=false; btn.innerHTML='<i class="fas fa-lock me-2"></i>Confirm & Pay'; }
+  }
+}
+
+function formatCardNumber(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 16);
+  input.value = v.replace(/(.{4})/g, '$1 ').trim();
+}
+function formatExpiry(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 4);
+  if (v.length >= 3) v = v.substring(0,2) + '/' + v.substring(2);
+  input.value = v;
+}
+
+function showQR(total) {
+  document.getElementById('qrAmountDisplay').textContent = '₹' + total;
+  if (!qrGenerated) {
+    const div = document.getElementById('qrCodeDiv');
+    div.innerHTML = '';
+    new QRCode(div, { text:`upi://pay?pa=7013528144@axl&pn=Anusha+Bobili&am=${total}&cu=INR&tn=CineVerse+Movie+Ticket`, width:200, height:200, colorDark:'#5f259f', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H });
+    qrGenerated = true;
+  }
+  document.getElementById('qrModal').style.display = 'flex';
+  document.getElementById('qrBackdrop').style.display = 'block';
+}
+
+function closeQR() {
+  document.getElementById('qrModal').style.display = 'none';
+  document.getElementById('qrBackdrop').style.display = 'none';
+}
+
+async function confirmPayment() {
+  if (!pendingBookingData) return;
+  const btn = document.getElementById('qrDoneBtn');
+  btn.disabled = true; btn.textContent = 'Processing…';
+  try {
+    const res = await fetch(window.location.href, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(pendingBookingData) });
+    const d = await res.json();
+    if (d.success) { stopPaymentTimer(); closeQR(); closePayment(); location.href = d.redirect; }
+    else { alert(d.message||'Booking failed.'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check-circle me-1"></i>Payment Done'; }
+  } catch { alert('Network error.'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check-circle me-1"></i>Payment Done'; }
+}
+</script>
+{% endblock %}

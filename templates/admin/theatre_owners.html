@@ -1,0 +1,536 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Theatre Owners – Admin{% endblock %}
+{% block page_title %}Theatre Owners{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h4>Theatre Owners</h4><p>{{ owners|length }} owners registered</p></div>
+  <button class="btn btn-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#addOwnerModal">
+    <i class="fas fa-user-plus me-2"></i>Add Theatre Owner
+  </button>
+</div>
+
+{% if owners %}
+<div class="row g-3">
+  {% for o in owners %}
+  <div class="col-md-6 col-lg-4">
+    <div class="owner-card">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="owner-avatar">{{ o.name[0].upper() }}</div>
+        <div>
+          <div class="fw-bold">{{ o.name }}</div>
+          <div class="text-muted small">{{ o.email }}</div>
+          <span class="bdg {% if o.is_active %}bdg-green{% else %}bdg-gray{% endif %} mt-1">{{ 'Active' if o.is_active else 'Inactive' }}</span>
+        </div>
+      </div>
+      <div class="mb-3">
+        <div class="d-flex gap-2 text-muted small mb-1"><i class="fas fa-phone"></i><span>{{ o.phone or '—' }}</span></div>
+        <div class="d-flex gap-2 text-muted small mb-1"><i class="fas fa-map-marker-alt"></i><span>{{ o.city or '—' }}</span></div>
+        <div class="d-flex gap-2 text-muted small"><i class="fas fa-calendar-alt"></i><span>Joined {{ o.created_at.strftime('%d %b %Y') if o.created_at else '—' }}</span></div>
+      </div>
+      <div class="mb-3">
+        <div class="text-muted small"><i class="fas fa-building me-1"></i><span class="assigned-count-{{ o.id }}">Loading theatres…</span></div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-sm btn-outline-primary flex-fill" onclick="openAssignModal({{ o.id }}, '{{ o.name }}')">
+          <i class="fas fa-building me-1"></i>Assign Theatres
+        </button>
+        <button class="btn btn-sm {% if o.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} flex-fill"
+                onclick="toggleOwner({{ o.id }})">
+          <i class="fas {% if o.is_active %}fa-ban{% else %}fa-check{% endif %} me-1"></i>
+          {{ 'Deactivate' if o.is_active else 'Activate' }}
+        </button>
+        <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteOwner({{ o.id }}, '{{ o.name }}')">
+          <i class="fas fa-trash me-1"></i>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fas fa-user-tie"></i>
+  <h5>No Theatre Owners Yet</h5>
+  <p>Create theatre owners and assign theatres to them.</p>
+  <button class="btn btn-danger mt-2" data-bs-toggle="modal" data-bs-target="#addOwnerModal">
+    <i class="fas fa-plus me-2"></i>Add First Owner
+  </button>
+</div>
+{% endif %}
+
+<!-- ADD OWNER MODAL -->
+<div class="modal fade bms-modal" id="addOwnerModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Add Theatre Owner</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div id="credBox" class="d-none mb-3" style="background:linear-gradient(135deg,#1a3a1a,#0d2f0d);border:1.5px solid #28a745;border-radius:10px;padding:18px;">
+        <p class="fw-bold mb-2" style="color:#28a745;"><i class="fas fa-envelope-check me-2"></i>Account Created Successfully!</p>
+        <p class="small mb-3" style="color:#aaa;">Login credentials have been sent to the owner's email address. They can log in with those credentials.</p>
+        <div id="emailStatus" class="small text-center"></div>
+      </div>
+      <form id="addOwnerForm">
+        <div class="mb-3"><label class="form-label fw-semibold">Full Name *</label><input type="text" name="name" class="form-control" required placeholder="Theatre Owner Name"></div>
+        <div class="mb-3"><label class="form-label fw-semibold">Email Address *</label><input type="email" name="email" class="form-control" required placeholder="owner@example.com"></div>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label fw-semibold">Phone</label><input type="tel" name="phone" class="form-control" placeholder="9876543210"></div>
+          <div class="col-6"><label class="form-label fw-semibold">City</label><input type="text" name="city" class="form-control" placeholder="Mumbai"></div>
+        </div>
+        <div class="alert alert-info small py-2 mt-3 mb-0"><i class="fas fa-magic me-1"></i>A secure password is auto-generated and emailed to the owner.</div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button id="addOwnerBtn" class="btn btn-danger fw-semibold" onclick="submitAddOwner()"><i class="fas fa-user-plus me-1"></i>Create Owner</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- ASSIGN THEATRE MODAL -->
+<div class="modal fade bms-modal" id="assignTheatreModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="fas fa-building me-2"></i>Assign Theatres — <span id="assignOwnerName"></span></h5>
+      <button class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Currently Assigned -->
+      <div class="mb-4">
+        <h6 class="fw-semibold mb-2" style="color:#e63946;"><i class="fas fa-check-circle me-2"></i>Currently Assigned Theatres</h6>
+        <div id="assignedTheatresList">
+          <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading…</div>
+        </div>
+      </div>
+
+      <hr style="border-color:#2a2a45;">
+
+      <!-- Assign New -->
+      <div>
+        <h6 class="fw-semibold mb-3" style="color:#4da6ff;"><i class="fas fa-plus-circle me-2"></i>Assign New Theatre</h6>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <input type="text" id="theatreSearchInput" class="form-control form-control-sm" placeholder="Search by theatre name…" oninput="filterTheatres()">
+          </div>
+          <div class="col-md-6">
+            <select id="cityFilterSelect" class="form-select form-select-sm" onchange="filterTheatres()">
+              <option value="">All Cities</option>
+            </select>
+          </div>
+        </div>
+        <div id="availableTheatresList" style="max-height:320px;overflow-y:auto;border:1px solid #2a2a45;border-radius:8px;padding:8px;">
+          <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading theatres…</div>
+        </div>
+      </div>
+
+    </div>
+
+    <hr style="border-color:#2a2a45;">
+
+    <!-- Screens Section -->
+    <div id="screensSection" class="d-none">
+      <h6 class="fw-semibold mb-3" style="color:#f39c12;"><i class="fas fa-tv me-2"></i>Assign / Manage Screens</h6>
+      <div class="mb-2">
+        <select id="screenTheatreSelect" class="form-select form-select-sm mb-2" onchange="loadTheatreScreens()">
+          <option value="">Select a theatre to manage its screens…</option>
+        </select>
+      </div>
+      <div id="screensList" style="max-height:200px;overflow-y:auto;border:1px solid #2a2a45;border-radius:8px;padding:8px;margin-bottom:8px;">
+        <div class="text-muted small text-center py-2">Select a theatre above</div>
+      </div>
+      <!-- Add new screen inline -->
+      <div id="addScreenInline" class="d-none" style="background:#1a1a2e;border:1px solid #2a2a45;border-radius:8px;padding:12px;">
+        <div class="row g-2 align-items-end">
+          <div class="col-5"><label class="small text-muted mb-1">Screen Name</label><input type="text" id="newScreenName" class="form-control form-control-sm" placeholder="e.g. Screen 1, IMAX"></div>
+          <div class="col-4"><label class="small text-muted mb-1">Total Seats</label><input type="number" id="newScreenSeats" class="form-control form-control-sm" value="150" min="1"></div>
+          <div class="col-3"><button class="btn btn-sm btn-success w-100" onclick="addScreenFromModal()"><i class="fas fa-plus me-1"></i>Add</button></div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
+  </div></div>
+</div>
+
+<style>
+.theatre-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 12px; border-radius:6px; margin-bottom:4px;
+  background:#1a1a2e; border:1px solid #2a2a45; transition:border-color .2s;
+}
+.theatre-item:hover { border-color:#4da6ff; }
+.already-assigned { opacity:.5; pointer-events:none; }
+.assigned-theatre-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; border-radius:8px; margin-bottom:6px;
+  background:linear-gradient(135deg,#0d2f1a,#1a3a1a); border:1px solid #28a745;
+}
+</style>
+
+<script>
+let currentOwnerId = null;
+let allTheatres = [];
+let assignedIds = [];
+
+// Chain branding map — color + icon per cinema chain
+const CHAIN_BRANDS = {
+  'PVR':          { color: '#e50914', bg: 'rgba(229,9,20,0.12)',   icon: 'fas fa-film',       label: 'PVR Cinemas' },
+  'INOX':         { color: '#00b4d8', bg: 'rgba(0,180,216,0.12)',  icon: 'fas fa-ticket-alt', label: 'INOX Leisure' },
+  'Cinepolis':    { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', icon: 'fas fa-video',      label: 'Cinépolis' },
+  'Wave':         { color: '#9b59b6', bg: 'rgba(155,89,182,0.12)', icon: 'fas fa-wave-square', label: 'Wave Cinemas' },
+  'Carnival':     { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  icon: 'fas fa-theater-masks', label: 'Carnival Cinemas' },
+  'Miraj':        { color: '#e67e22', bg: 'rgba(230,126,34,0.12)', icon: 'fas fa-star',        label: 'Miraj Cinemas' },
+  'Movietime':    { color: '#1abc9c', bg: 'rgba(26,188,156,0.12)', icon: 'fas fa-clock',       label: 'Movietime' },
+  'Fun Cinemas':  { color: '#e91e63', bg: 'rgba(233,30,99,0.12)',  icon: 'fas fa-laugh',       label: 'Fun Cinemas' },
+  'SPI':          { color: '#3498db', bg: 'rgba(52,152,219,0.12)', icon: 'fas fa-film',        label: 'SPI Cinemas' },
+  'Cinemax':      { color: '#f1c40f', bg: 'rgba(241,196,15,0.12)', icon: 'fas fa-expand',      label: 'Cinemax' },
+};
+function getChainBrand(name) {
+  return CHAIN_BRANDS[name] || { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', icon: 'fas fa-layer-group', label: name };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  {% for o in owners %}
+  loadOwnerPreview({{ o.id }});
+  {% endfor %}
+});
+
+async function loadOwnerPreview(ownerId) {
+  try {
+    const res = await fetch(`/admin/theatre-owners/${ownerId}/theatres`);
+    const d = await res.json();
+    const el = document.querySelector(`.assigned-count-${ownerId}`);
+    if (!el) return;
+    const count = d.assigned.length;
+    if (count === 0) {
+      el.innerHTML = '<span style="color:#888;">No theatres assigned yet</span>';
+    } else {
+      const cities = [...new Set(d.assigned.map(t => t.city).filter(Boolean))].slice(0,3).join(', ');
+      el.innerHTML = `<strong style="color:#28a745;">${count} theatre${count>1?'s':''}</strong> assigned${cities ? ' &nbsp;·&nbsp; ' + cities : ''}`;
+    }
+  } catch(e) {
+    const el = document.querySelector(`.assigned-count-${ownerId}`);
+    if (el) el.textContent = '—';
+  }
+}
+
+async function openAssignModal(ownerId, ownerName) {
+  currentOwnerId = ownerId;
+  document.getElementById('assignOwnerName').textContent = ownerName;
+  document.getElementById('theatreSearchInput').value = '';
+  document.getElementById('cityFilterSelect').value = '';
+  document.getElementById('screensSection').classList.add('d-none');
+  const modal = new bootstrap.Modal(document.getElementById('assignTheatreModal'));
+  modal.show();
+  await Promise.all([loadAssigned(), loadAllTheatres()]);
+}
+
+async function loadAssigned() {
+  const container = document.getElementById('assignedTheatresList');
+  container.innerHTML = '<div class="text-center text-muted py-2"><span class="spinner-border spinner-border-sm me-2"></span>Loading…</div>';
+  try {
+    const res = await fetch(`/admin/theatre-owners/${currentOwnerId}/theatres`);
+    const d = await res.json();
+    assignedIds = d.assigned.map(t => t.id);
+    if (d.assigned.length === 0) {
+      container.innerHTML = '<div class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No theatres assigned yet. Use the section below to assign.</div>';
+    } else {
+      container.innerHTML = d.assigned.map(t => `
+        <div class="assigned-theatre-item" id="assigned-row-${t.id}">
+          <div>
+            <div class="fw-semibold" style="color:#fff;">${t.name}</div>
+            <div class="small" style="color:#aaa;">
+              <i class="fas fa-map-marker-alt me-1" style="color:#e63946;"></i>
+              ${t.city || '—'}${t.state ? ', ' + t.state : ''}
+              ${t.location ? ' &nbsp;·&nbsp; ' + t.location : ''}
+            </div>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-sm btn-outline-info" onclick="showScreensSection('${t.id}', '${t.name.replace(/'/g,"\\'")}')">
+              <i class="fas fa-tv me-1"></i>Screens
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="unassignTheatre('${t.id}', '${t.name.replace(/'/g,"\\'")}')">
+              <i class="fas fa-times me-1"></i>Remove
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      // Populate screens dropdown with assigned theatres
+      const sel = document.getElementById('screenTheatreSelect');
+      sel.innerHTML = '<option value="">Select a theatre to manage its screens…</option>';
+      d.assigned.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id; opt.textContent = t.name + (t.city ? ' – ' + t.city : '');
+        sel.appendChild(opt);
+      });
+      if (d.assigned.length > 0) {
+        document.getElementById('screensSection').classList.remove('d-none');
+      }
+    }
+  } catch(e) {
+    container.innerHTML = '<div class="text-danger small">Failed to load.</div>';
+  }
+  renderAvailableTheatres();
+}
+
+async function loadAllTheatres() {
+  try {
+    const res = await fetch('/admin/api/theatres-list');
+    allTheatres = await res.json();
+    // Populate city filter from standalone theatres only (chains span multiple cities)
+    const cities = [...new Set(allTheatres.filter(t=>!t.is_chain).map(t => t.city).filter(Boolean))].sort();
+    const sel = document.getElementById('cityFilterSelect');
+    sel.innerHTML = '<option value="">All Cities</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
+    renderAvailableTheatres();
+  } catch(e) {
+    document.getElementById('availableTheatresList').innerHTML = '<div class="text-danger small p-2">Failed to load theatres.</div>';
+  }
+}
+
+function filterTheatres() { renderAvailableTheatres(); }
+
+function renderAvailableTheatres() {
+  const search = (document.getElementById('theatreSearchInput').value || '').toLowerCase();
+  const city = document.getElementById('cityFilterSelect').value;
+  const container = document.getElementById('availableTheatresList');
+
+  let filtered = allTheatres.filter(t => {
+    const cityMatch = !city || (t.city && t.city.toLowerCase().includes(city.toLowerCase()));
+    const nameMatch = !search || t.name.toLowerCase().includes(search);
+    return nameMatch && (!city || t.is_chain || cityMatch);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="text-muted small text-center py-3">No theatres found.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(t => {
+    if (t.is_chain) {
+      const ids = t.theatre_ids || [];
+      const allAssigned = ids.length > 0 && ids.every(id => assignedIds.includes(id));
+      const someAssigned = !allAssigned && ids.some(id => assignedIds.includes(id));
+      const brand = getChainBrand(t.chain_name);
+      const btnClass = allAssigned ? 'btn-success disabled' : (someAssigned ? 'btn-warning' : 'btn-outline-success');
+      const btnLabel = allAssigned
+        ? `<i class="fas fa-check me-1"></i>All Assigned`
+        : someAssigned
+          ? `<i class="fas fa-sync me-1"></i>Assign Remaining (${ids.filter(id=>!assignedIds.includes(id)).length})`
+          : `<i class="${brand.icon} me-1"></i>Assign All ${ids.length} Locations`;
+      const onclick = allAssigned ? '' : `onclick="assignChain('${t.chain_name}', ${JSON.stringify(ids).replace(/"/g,'&quot;')})"`;
+      return `
+        <div class="theatre-item" style="background:${brand.bg};border-color:${brand.color};border-width:1.5px;">
+          <div>
+            <div class="fw-semibold" style="color:${brand.color};font-size:.95rem;">
+              <i class="${brand.icon} me-2"></i>${brand.label || t.name}
+              <span class="badge ms-2" style="font-size:10px;background:rgba(255,255,255,0.1);color:#fff;">${ids.length} locations</span>
+              ${someAssigned ? '<span class="badge bg-warning text-dark ms-1" style="font-size:10px;">Partial</span>' : ''}
+            </div>
+            <div class="small" style="color:#aaa;margin-top:2px;">${t.city || ''}</div>
+          </div>
+          <button class="btn btn-sm ${btnClass}" style="${!allAssigned ? 'border-color:'+brand.color+';color:'+brand.color+';' : ''}" ${onclick}>${btnLabel}</button>
+        </div>`;
+    }
+    const isAssigned = assignedIds.includes(t.id);
+    return `
+      <div class="theatre-item ${isAssigned ? 'already-assigned' : ''}">
+        <div>
+          <div class="fw-semibold" style="color:#fff;">${t.name}</div>
+          <div class="small" style="color:#aaa;"><i class="fas fa-map-marker-alt me-1" style="color:#e63946;"></i>${t.city || '—'}</div>
+        </div>
+        <button class="btn btn-sm ${isAssigned ? 'btn-success disabled' : 'btn-outline-success'}"
+                ${isAssigned ? '' : `onclick="assignTheatre('${t.id}', '${t.name.replace(/'/g,"\\'")}')"`}>
+          <i class="fas ${isAssigned ? 'fa-check' : 'fa-plus'} me-1"></i>${isAssigned ? 'Assigned' : 'Assign'}
+        </button>
+      </div>`;
+  }).join('');
+}
+
+async function assignChain(chainName, theatreIds) {
+  const ids = typeof theatreIds === 'string' ? JSON.parse(theatreIds) : theatreIds;
+  const toAssign = ids.filter(id => !assignedIds.includes(id));
+  if (toAssign.length === 0) { window.toast('All theatres in this chain are already assigned.', 'info'); return; }
+  try {
+    const res = await fetch(`/admin/theatre-owners/${currentOwnerId}/assign-theatre`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ theatre_ids: toAssign })
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast(d.message || `${chainName} chain assigned!`, 'success');
+      await loadAssigned(); loadOwnerPreview(currentOwnerId);
+    } else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+
+async function assignTheatre(theatreId, theatreName) {
+  try {
+    const res = await fetch(`/admin/theatre-owners/${currentOwnerId}/assign-theatre`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ theatre_id: theatreId })
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast(`"${theatreName}" assigned!`, 'success');
+      await loadAssigned(); loadOwnerPreview(currentOwnerId);
+      showScreensSection(theatreId, theatreName);
+    } else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+
+function showScreensSection(theatreId, theatreName) {
+  const section = document.getElementById('screensSection');
+  section.classList.remove('d-none');
+  const sel = document.getElementById('screenTheatreSelect');
+  // Populate if not already
+  let found = false;
+  for (let opt of sel.options) { if (opt.value === theatreId) { found = true; break; } }
+  if (!found) {
+    const opt = document.createElement('option');
+    opt.value = theatreId; opt.textContent = theatreName;
+    sel.appendChild(opt);
+  }
+  sel.value = theatreId;
+  loadTheatreScreens();
+}
+
+async function loadTheatreScreens() {
+  const theatreId = document.getElementById('screenTheatreSelect').value;
+  const container = document.getElementById('screensList');
+  const addInline = document.getElementById('addScreenInline');
+  if (!theatreId) {
+    container.innerHTML = '<div class="text-muted small text-center py-2">Select a theatre above</div>';
+    addInline.classList.add('d-none');
+    return;
+  }
+  addInline.classList.remove('d-none');
+  container.innerHTML = '<div class="text-center text-muted py-2"><span class="spinner-border spinner-border-sm me-2"></span>Loading screens…</div>';
+  try {
+    const res = await fetch(`/admin/api/screens-list?theater_id=${theatreId}`);
+    const screens = await res.json();
+    if (screens.length === 0) {
+      container.innerHTML = '<div class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No screens yet. Add one below.</div>';
+    } else {
+      container.innerHTML = screens.map(s => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:6px;margin-bottom:4px;background:#1a1a2e;border:1px solid #28a745;">
+          <div>
+            <span class="fw-semibold" style="color:#fff;">${s.number}</span>
+            <span class="small text-muted ms-2">ID: ${s.id}</span>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteScreenFromModal('${s.id}', '${s.number.replace(/'/g,"\\'")}')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+  } catch {
+    container.innerHTML = '<div class="text-danger small p-2">Failed to load screens.</div>';
+  }
+}
+
+async function addScreenFromModal() {
+  const theatreId = document.getElementById('screenTheatreSelect').value;
+  const name = document.getElementById('newScreenName').value.trim();
+  const seats = document.getElementById('newScreenSeats').value || 150;
+  if (!theatreId || !name) { window.toast('Select a theatre and enter a screen name.', 'danger'); return; }
+  try {
+    const res = await fetch('/admin/screens/add', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ theater_id: theatreId, screen_number: name, total_seats: seats })
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast(`Screen "${name}" added!`, 'success');
+      document.getElementById('newScreenName').value = '';
+      loadTheatreScreens();
+    } else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+
+async function deleteScreenFromModal(screenId, screenName) {
+  if (!confirm(`Delete screen "${screenName}"?`)) return;
+  try {
+    const res = await fetch(`/admin/screens/${screenId}/delete`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}
+    });
+    const d = await res.json();
+    if (d.success) { window.toast('Screen deleted.', 'success'); loadTheatreScreens(); }
+    else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+
+async function unassignTheatre(theatreId, theatreName) {
+  if (!confirm(`Remove "${theatreName}" from this owner?`)) return;
+  try {
+    const res = await fetch(`/admin/theatre-owners/${currentOwnerId}/unassign-theatre`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ theatre_id: theatreId })
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast(`"${theatreName}" removed.`, 'success');
+      await loadAssigned();
+      loadOwnerPreview(currentOwnerId);
+    } else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+
+async function submitAddOwner() {
+  const form = document.getElementById('addOwnerForm');
+  const payload = {
+    name:  form.querySelector('[name="name"]').value.trim(),
+    email: form.querySelector('[name="email"]').value.trim(),
+    phone: form.querySelector('[name="phone"]')?.value.trim() || '',
+    city:  form.querySelector('[name="city"]')?.value.trim() || ''
+  };
+  if (!payload.name || !payload.email) { window.toast('Name and email are required.', 'danger'); return; }
+  const btn = document.getElementById('addOwnerBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating…';
+  try {
+    const res = await fetch('/admin/theatre-owners/create', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast('Theatre owner created!', 'success');
+      const box = document.getElementById('credBox');
+      if (box) {
+        box.classList.remove('d-none');
+        const emailEl = document.getElementById('emailStatus');
+        if (d.email_sent) {
+          emailEl.innerHTML = '<i class="fas fa-envelope-check me-1" style="color:#28a745;"></i><span style="color:#28a745;">Credentials sent to owner\'s email.</span>';
+        } else {
+          emailEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1" style="color:#ffc107;"></i><span style="color:#ffc107;">Email could not be sent. Contact the owner directly.</span>';
+        }
+      }
+      form.reset();
+      document.getElementById('addOwnerBtn').style.display = 'none';
+      setTimeout(() => location.reload(), 5000);
+    } else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+  btn.disabled = false; btn.innerHTML = orig;
+}
+
+async function toggleOwner(id) {
+  try {
+    const res = await fetch(`/admin/theatre-owners/${id}/deactivate`, { method:'POST', headers:{'Content-Type':'application/json'} });
+    const d = await res.json();
+    if (d.success) { window.toast(d.message, 'success'); setTimeout(() => location.reload(), 1200); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+
+async function deleteOwner(id, name) {
+  if (!confirm('Are you sure you want to DELETE theatre owner "' + name + '"?\n\nThis action cannot be undone.')) return;
+  try {
+    const res = await fetch('/admin/theatre-owners/' + id + '/delete', { method:'POST', headers:{'Content-Type':'application/json'} });
+    const d = await res.json();
+    if (d.success) { window.toast('Owner deleted!', 'success'); setTimeout(() => location.reload(), 1000); }
+    else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+</script>
+{% endblock %}

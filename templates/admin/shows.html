@@ -1,0 +1,146 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Shows – Admin{% endblock %}
+{% block page_title %}Shows{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h4>Shows</h4><p>{{ total }} shows in the system</p></div>
+  <button class="btn btn-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#addShowModal">
+    <i class="fas fa-plus me-2"></i>Add Show
+  </button>
+</div>
+<div class="pcard">
+  <div class="pcard-head"><span>All Shows</span></div>
+  <div style="overflow-x:auto">
+    <table class="ptable">
+      <thead><tr><th>Movie</th><th>Theatre</th><th>City</th><th>Screen</th><th>Date</th><th>Time</th><th>Price</th><th>Seats</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for s in shows %}
+        <tr>
+          <td class="fw-semibold">{{ s.movie_title }}</td>
+          <td>{{ s.theatre_name }}</td>
+          <td><span class="bdg bdg-blue">{{ s.city }}</span></td>
+          <td>#{{ s.screen_number }}</td>
+          <td>{{ s.show_date }}</td>
+          <td><span class="bdg bdg-yellow">{{ s.start_time }}</span></td>
+          <td class="fw-bold text-danger">₹{{ s.price_per_ticket|int if s.price_per_ticket else '—' }}</td>
+          <td>{{ s.available_seats or '—' }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteShow('{{ s.show_id }}', '{{ s.movie_title }}')">
+              <i class="fas fa-trash me-1"></i>Delete
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center py-5 text-muted">No shows found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if total_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center p-3 border-top">
+    <span class="small text-muted">Page {{ page }} of {{ total_pages }}</span>
+    <nav><ul class="pagination pagination-sm mb-0">
+      {% if page > 1 %}<li class="page-item"><a class="page-link" href="?page={{ page-1 }}">‹</a></li>{% endif %}
+      {% for p in range([1,page-2]|max, [total_pages+1,page+3]|min) %}
+        <li class="page-item {% if p==page %}active{% endif %}"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+      {% endfor %}
+      {% if page < total_pages %}<li class="page-item"><a class="page-link" href="?page={{ page+1 }}">›</a></li>{% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ADD SHOW MODAL -->
+<div class="modal fade bms-modal" id="addShowModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title"><i class="fas fa-calendar-plus me-2"></i>Add Show</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="addShowForm">
+        <div class="mb-3"><label class="form-label fw-semibold">Movie *</label>
+          <select name="movie_id" class="form-select" required><option value="">Select Movie…</option></select>
+        </div>
+        <div class="mb-3"><label class="form-label fw-semibold">Theatre *</label>
+          <select name="theater_id" class="form-select" required onchange="loadScreens(this.value)"><option value="">Select Theatre…</option></select>
+        </div>
+        <div class="mb-3"><label class="form-label fw-semibold">Screen *</label>
+          <select name="screen_id" class="form-select" required><option value="">Select Theatre First…</option></select>
+        </div>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label fw-semibold">Show Date *</label><input type="date" name="show_date" class="form-control" required></div>
+          <div class="col-6"><label class="form-label fw-semibold">Start Time *</label><input type="time" name="start_time" class="form-control" required></div>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-6"><label class="form-label fw-semibold">Price per Ticket (₹) *</label><input type="number" name="price" class="form-control" required placeholder="250"></div>
+          <div class="col-6"><label class="form-label fw-semibold">Available Seats *</label><input type="number" name="seats" class="form-control" required placeholder="100"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button id="addShowBtn" class="btn btn-danger fw-semibold" onclick="submitAddShow()"><i class="fas fa-plus me-1"></i>Add Show</button>
+    </div>
+  </div></div>
+</div>
+
+<script>
+// Load dropdowns on modal open
+document.getElementById('addShowModal').addEventListener('show.bs.modal', async () => {
+  try {
+    const [movies, theatres] = await Promise.all([
+      fetch('/admin/api/movies-list').then(r => r.json()),
+      fetch('/admin/api/theatres-list').then(r => r.json())
+    ]);
+    const mSel = document.querySelector('[name="movie_id"]');
+    const tSel = document.querySelector('[name="theater_id"]');
+    mSel.innerHTML = '<option value="">Select Movie…</option>' + movies.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+    tSel.innerHTML = '<option value="">Select Theatre…</option>' + theatres.map(t => `<option value="${t.id}">${t.name} – ${t.city}</option>`).join('');
+  } catch(e) {}
+});
+
+async function loadScreens(theatreId) {
+  const sSel = document.querySelector('[name="screen_id"]');
+  if (!theatreId) { sSel.innerHTML = '<option value="">Select Theatre First…</option>'; return; }
+  try {
+    const screens = await fetch('/admin/api/screens-list?theater_id=' + theatreId).then(r => r.json());
+    sSel.innerHTML = screens.length
+      ? '<option value="">Select Screen…</option>' + screens.map(s => `<option value="${s.id}">Screen #${s.number}</option>`).join('')
+      : '<option value="">No screens available</option>';
+  } catch { sSel.innerHTML = '<option value="">Error loading screens</option>'; }
+}
+
+async function submitAddShow() {
+  const form = document.getElementById('addShowForm');
+  const payload = {
+    movie_id: form.querySelector('[name="movie_id"]').value,
+    theater_id: form.querySelector('[name="theater_id"]').value,
+    screen_id: form.querySelector('[name="screen_id"]').value,
+    show_date: form.querySelector('[name="show_date"]').value,
+    start_time: form.querySelector('[name="start_time"]').value,
+    price: form.querySelector('[name="price"]').value,
+    seats: form.querySelector('[name="seats"]').value,
+  };
+  if (!payload.movie_id || !payload.theater_id || !payload.screen_id || !payload.show_date || !payload.start_time) {
+    window.toast('Please fill all required fields.', 'danger'); return;
+  }
+  const btn = document.getElementById('addShowBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding…';
+  try {
+    const res = await fetch('/admin/shows/add', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const d = await res.json();
+    if (d.success) { window.toast('Show added successfully!', 'success'); setTimeout(() => location.reload(), 1200); }
+    else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus me-1"></i>Add Show';
+}
+
+async function deleteShow(id, movieTitle) {
+  if (!confirm('Are you sure you want to delete this show for "' + movieTitle + '"?')) return;
+  try {
+    const res = await fetch('/admin/shows/' + id + '/delete', { method:'POST', headers:{'Content-Type':'application/json'} });
+    const d = await res.json();
+    if (d.success) { window.toast('Show deleted!', 'success'); setTimeout(() => location.reload(), 1000); }
+    else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+</script>
+{% endblock %}

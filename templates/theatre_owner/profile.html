@@ -1,0 +1,192 @@
+{% extends "theatre_owner/base_owner.html" %}
+{% block title %}My Profile – CineVerse{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+
+<div class="ph">
+  <div><h4>My Profile</h4><p>Manage your account information and password</p></div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Profile Info Card -->
+  <div class="col-lg-6">
+    <div class="pcard">
+      <div class="pcard-head">
+        <span><i class="fas fa-user text-danger me-2"></i>Account Information</span>
+      </div>
+      <div class="pcard-body">
+        <div class="text-center mb-4">
+          <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:2rem;color:#fff;margin:0 auto 12px;font-family:'Bebas Neue',sans-serif;">
+            {{ user.name[0].upper() }}
+          </div>
+          <div class="fw-bold fs-5">{{ user.name }}</div>
+          <div class="text-muted small">{{ user.email }}</div>
+          <span class="bdg bdg-blue mt-1">Theatre Owner</span>
+        </div>
+
+        <form id="profileForm">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name *</label>
+            <input type="text" id="pName" class="form-control" value="{{ user.name }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email Address</label>
+            <input type="email" class="form-control" value="{{ user.email }}" disabled
+                   style="opacity:.6;cursor:not-allowed">
+            <div class="form-text">Email cannot be changed. Contact admin if needed.</div>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label fw-semibold">Phone</label>
+              <input type="tel" id="pPhone" class="form-control" value="{{ user.phone or '' }}" placeholder="9876543210">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">City</label>
+              <input type="text" id="pCity" class="form-control" value="{{ user.city or '' }}" placeholder="Mumbai">
+            </div>
+          </div>
+          <button type="button" class="btn btn-danger w-100 mt-3 fw-semibold" onclick="updateProfile()">
+            <i class="fas fa-save me-2"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Card -->
+  <div class="col-lg-6">
+    <div class="pcard">
+      <div class="pcard-head">
+        <span><i class="fas fa-lock text-danger me-2"></i>Change Password</span>
+      </div>
+      <div class="pcard-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Current Password *</label>
+          <div class="input-group">
+            <input type="password" id="curPw" class="form-control" placeholder="Enter current password">
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePw('curPw',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">New Password *</label>
+          <div class="input-group">
+            <input type="password" id="newPw" class="form-control" placeholder="Min. 6 characters">
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePw('newPw',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Confirm New Password *</label>
+          <div class="input-group">
+            <input type="password" id="confPw" class="form-control" placeholder="Re-enter new password">
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePw('confPw',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+
+        <!-- Password strength bar -->
+        <div class="mb-3">
+          <div style="height:4px;background:#1e1e35;border-radius:4px;overflow:hidden">
+            <div id="pwStrengthBar" style="height:100%;width:0;background:#e63946;transition:width .3s,background .3s;border-radius:4px;"></div>
+          </div>
+          <div id="pwStrengthLabel" class="form-text mt-1"></div>
+        </div>
+
+        <button type="button" class="btn btn-outline-danger w-100 fw-semibold" onclick="changePassword()">
+          <i class="fas fa-key me-2"></i>Update Password
+        </button>
+
+        <div class="alert alert-info small py-2 mt-3 mb-0">
+          <i class="fas fa-shield-alt me-1"></i>
+          Use a strong password with letters, numbers, and symbols.
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Stats -->
+    <div class="pcard mt-4">
+      <div class="pcard-head"><span><i class="fas fa-info-circle text-danger me-2"></i>Account Details</span></div>
+      <div class="pcard-body">
+        <div class="detail-row"><span class="lbl">Account ID</span><span class="val">#{{ user.id }}</span></div>
+        <div class="detail-row"><span class="lbl">Role</span><span class="val"><span class="bdg bdg-blue">Theatre Owner</span></span></div>
+        <div class="detail-row"><span class="lbl">Status</span><span class="val">
+          {% if user.is_active %}<span class="bdg bdg-green">Active</span>{% else %}<span class="bdg bdg-red">Inactive</span>{% endif %}
+        </span></div>
+        <div class="detail-row"><span class="lbl">Member Since</span><span class="val">{{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  const isText = inp.type === 'text';
+  inp.type = isText ? 'password' : 'text';
+  btn.querySelector('i').className = isText ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+
+document.getElementById('newPw').addEventListener('input', function() {
+  const pw = this.value;
+  let strength = 0;
+  if (pw.length >= 6) strength++;
+  if (pw.length >= 10) strength++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) strength++;
+  if (/\d/.test(pw)) strength++;
+  if (/[^A-Za-z0-9]/.test(pw)) strength++;
+  const bar = document.getElementById('pwStrengthBar');
+  const lbl = document.getElementById('pwStrengthLabel');
+  const colors = ['#e63946','#e63946','#ffc107','#28a745','#28a745'];
+  const labels = ['','Very Weak','Weak','Good','Strong','Very Strong'];
+  bar.style.width = (strength * 20) + '%';
+  bar.style.background = colors[strength] || '#e63946';
+  lbl.textContent = labels[strength] || '';
+  lbl.style.color = colors[strength] || '#e63946';
+});
+
+async function updateProfile() {
+  const payload = {
+    action: 'update_info',
+    name:  document.getElementById('pName').value.trim(),
+    phone: document.getElementById('pPhone').value.trim(),
+    city:  document.getElementById('pCity').value.trim()
+  };
+  if (!payload.name) { window.toast('Name is required.','danger'); return; }
+  try {
+    const res = await fetch('/theatre-owner/profile/update', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    window.toast(d.message, d.success ? 'success' : 'danger');
+  } catch { window.toast('Network error.','danger'); }
+}
+
+async function changePassword() {
+  const payload = {
+    action: 'change_password',
+    current_password: document.getElementById('curPw').value,
+    new_password:     document.getElementById('newPw').value,
+    confirm_password: document.getElementById('confPw').value
+  };
+  if (!payload.current_password || !payload.new_password || !payload.confirm_password) {
+    window.toast('Please fill all password fields.','danger'); return;
+  }
+  try {
+    const res = await fetch('/theatre-owner/profile/update', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    window.toast(d.message, d.success ? 'success' : 'danger');
+    if (d.success) {
+      document.getElementById('curPw').value = '';
+      document.getElementById('newPw').value = '';
+      document.getElementById('confPw').value = '';
+    }
+  } catch { window.toast('Network error.','danger'); }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,651 @@
+{% extends "base.html" %}
+{% block title %}Select Seats – {{ show.movie_title }} | CineVerse{% endblock %}
+{% block content %}
+
+<style>
+/* ─── SEAT SELECTION PAGE — UNIQUE MODERN PALETTE ─── */
+:root{
+  --seat-available:#1e3a5f;
+  --seat-available-border:#3b82f6;
+  --seat-available-hover:#2563eb;
+  --seat-selected:#7c3aed;
+  --seat-selected-border:#a78bfa;
+  --seat-selected-glow:rgba(124,58,237,0.55);
+  --seat-booked:#1f1f2e;
+  --seat-booked-border:#2d2d44;
+  --bg-page:#060612;
+  --bg-card:rgba(15,15,35,0.95);
+  --accent:#7c3aed;
+  --accent2:#3b82f6;
+  --text:#e2e8f0;
+  --text-muted:#64748b;
+}
+
+body{background:var(--bg-page);}
+
+.seat-page{min-height:100vh;background:radial-gradient(ellipse at top,#0f0830 0%,#060612 60%);padding:0;}
+
+/* STEP BAR */
+.ss-steps{background:#0a0a18;border-bottom:1px solid rgba(255,255,255,0.07);padding:14px 0;}
+.ss-steps-inner{display:flex;align-items:center;justify-content:center;max-width:500px;margin:0 auto;}
+.ss-step{display:flex;align-items:center;gap:8px;}
+.ss-sc{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;}
+.ss-sc.done{background:linear-gradient(135deg,#4ade80,#22c55e);color:#fff;}
+.ss-sc.act{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;box-shadow:0 0 18px rgba(124,58,237,0.55);}
+.ss-sc.pen{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.1);}
+.ss-sl{font-size:.65rem;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;}
+.ss-sl.done{color:#4ade80;}.ss-sl.act{color:#a78bfa;}.ss-sl.pen{color:rgba(255,255,255,0.25);}
+.ss-line{height:1px;background:rgba(255,255,255,0.1);margin:0 12px;width:60px;}
+
+/* MOVIE BAR */
+.ss-movie-bar{background:linear-gradient(135deg,#0f0830,#0a0a1e);border-bottom:1px solid rgba(255,255,255,0.08);padding:13px 22px;display:flex;align-items:center;gap:14px;}
+.ss-thumb{width:36px;height:50px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,0.15);}
+.ss-title{color:#fff;font-weight:800;font-size:1rem;}
+.ss-meta{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;}
+.ss-pill{border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:2px 8px;font-size:.62rem;color:rgba(255,255,255,0.45);}
+.ss-pill.v{border-color:rgba(124,58,237,0.5);color:rgba(167,139,250,0.9);background:rgba(124,58,237,0.08);}
+
+/* LAYOUT */
+.ss-wrap{display:grid;grid-template-columns:1fr 320px;gap:0;min-height:calc(100vh - 120px);}
+@media(max-width:960px){.ss-wrap{grid-template-columns:1fr;}}
+
+/* THEATRE AREA */
+.ss-theatre{padding:32px 28px;display:flex;flex-direction:column;align-items:center;}
+
+/* SCREEN */
+.ss-screen-wrap{width:100%;max-width:780px;margin-bottom:36px;text-align:center;}
+.ss-screen{width:70%;margin:0 auto;height:4px;background:linear-gradient(90deg,transparent,#7c3aed,#3b82f6,#7c3aed,transparent);border-radius:2px;box-shadow:0 0 24px rgba(124,58,237,0.6),0 0 60px rgba(59,130,246,0.3);margin-bottom:10px;}
+.ss-screen-lbl{font-size:.62rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.28);}
+
+/* SEAT CATEGORIES */
+.ss-cat{width:100%;max-width:780px;margin-bottom:28px;}
+.ss-cat-title{font-size:.6rem;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,0.25);text-align:center;margin-bottom:14px;display:flex;align-items:center;gap:10px;justify-content:center;}
+.ss-cat-title::before,.ss-cat-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.07);}
+.ss-cat-price{color:#a78bfa;font-weight:700;font-size:.7rem;}
+
+/* SEAT GRID */
+.ss-grid{display:flex;flex-direction:column;gap:8px;align-items:center;}
+.ss-row{display:flex;align-items:center;gap:7px;}
+.ss-row-lbl{width:20px;font-size:.65rem;font-weight:700;color:rgba(255,255,255,0.2);text-align:center;flex-shrink:0;}
+.ss-aisle{width:16px;flex-shrink:0;}
+
+/* SEAT */
+.seat{
+  width:34px;height:32px;
+  border-radius:6px 6px 4px 4px;
+  border:1.5px solid;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.58rem;font-weight:700;
+  transition:all .18s ease;
+  position:relative;
+  user-select:none;
+  flex-shrink:0;
+}
+/* seat back nub */
+.seat::before{
+  content:'';position:absolute;top:-4px;left:50%;transform:translateX(-50%);
+  width:60%;height:4px;border-radius:3px 3px 0 0;
+  background:inherit;border:inherit;border-bottom:none;
+}
+
+.seat-available{
+  background:var(--seat-available);
+  border-color:var(--seat-available-border);
+  color:rgba(100,200,255,0.7);
+}
+.seat-available:hover{
+  background:var(--seat-available-hover);
+  border-color:#60a5fa;
+  color:#fff;
+  transform:scale(1.12) translateY(-2px);
+  box-shadow:0 6px 18px rgba(59,130,246,0.4);
+  z-index:2;
+}
+.seat-selected{
+  background:var(--seat-selected);
+  border-color:var(--seat-selected-border);
+  color:#fff;
+  box-shadow:0 0 16px var(--seat-selected-glow);
+  transform:scale(1.08);
+}
+.seat-selected:hover{
+  transform:scale(1.12) translateY(-2px);
+}
+.seat-booked{
+  background:var(--seat-booked);
+  border-color:var(--seat-booked-border);
+  color:rgba(255,255,255,0.1);
+  cursor:not-allowed;
+}
+.seat-booked:hover{transform:none;box-shadow:none;}
+
+/* Locked by another user — red/orange warning state */
+.seat-locked{
+  background:#3b0f0f;
+  border-color:#ef4444;
+  color:rgba(239,68,68,0.6);
+  cursor:not-allowed;
+  animation: lockPulse 2s ease-in-out infinite;
+}
+.seat-locked:hover{transform:none;box-shadow:none;}
+@keyframes lockPulse{
+  0%,100%{box-shadow:0 0 6px rgba(239,68,68,0.3);}
+  50%{box-shadow:0 0 14px rgba(239,68,68,0.6);}
+}
+
+@keyframes slideIn{
+  from{transform:translateX(40px);opacity:0;}
+  to{transform:translateX(0);opacity:1;}
+}
+
+/* LEGEND */
+.ss-legend{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;width:100%;max-width:500px;}
+.ss-leg-item{display:flex;align-items:center;gap:7px;font-size:.78rem;color:rgba(255,255,255,0.5);}
+.ss-leg-swatch{width:22px;height:20px;border-radius:4px;border:1.5px solid;}
+.sw-avail{background:var(--seat-available);border-color:var(--seat-available-border);}
+.sw-sel{background:var(--seat-selected);border-color:var(--seat-selected-border);}
+.sw-bkd{background:var(--seat-booked);border-color:var(--seat-booked-border);}
+
+/* SUMMARY PANEL */
+.ss-summary{background:rgba(10,10,25,0.97);border-left:1px solid rgba(255,255,255,0.08);padding:28px 22px;display:flex;flex-direction:column;gap:0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+@media(max-width:960px){.ss-summary{position:static;height:auto;border-left:none;border-top:1px solid rgba(255,255,255,0.08);}}
+
+.ss-sum-title{color:#fff;font-weight:800;font-size:1rem;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.ss-sum-title i{color:#7c3aed;}
+
+.ss-sum-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.ss-sum-label{color:rgba(255,255,255,0.4);font-size:.78rem;font-weight:500;}
+.ss-sum-value{color:#fff;font-size:.82rem;font-weight:600;text-align:right;max-width:160px;word-break:break-word;}
+
+.ss-sum-total{display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(59,130,246,0.1));border:1px solid rgba(124,58,237,0.3);border-radius:10px;margin-top:16px;}
+.ss-sum-total .label{color:rgba(255,255,255,0.6);font-size:.8rem;font-weight:600;}
+.ss-sum-total .val{color:#a78bfa;font-size:1.4rem;font-weight:900;}
+
+.ss-proceed-btn{
+  width:100%;padding:14px;margin-top:18px;
+  background:linear-gradient(135deg,#7c3aed,#6d28d9);
+  border:none;border-radius:10px;
+  color:#fff;font-size:.9rem;font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  box-shadow:0 4px 20px rgba(124,58,237,0.4);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.ss-proceed-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,58,237,0.55);}
+.ss-proceed-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+.ss-seats-display{
+  background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);
+  border-radius:8px;padding:10px 12px;min-height:40px;
+  color:#c4b5fd;font-size:.8rem;font-weight:600;
+  word-break:break-all;margin-top:4px;
+}
+
+.ss-no-seats{color:rgba(255,255,255,0.25);font-style:italic;font-size:.75rem;}
+
+@media(max-width:600px){
+  .seat{width:28px;height:26px;font-size:.5rem;}
+  .ss-row{gap:5px;}
+  .ss-aisle{width:10px;}
+}
+</style>
+
+<!-- STEP BAR -->
+<div class="ss-steps">
+  <div class="ss-steps-inner">
+    <div class="ss-step"><div class="ss-sc done"><i class="fas fa-check" style="font-size:.55rem;"></i></div><span class="ss-sl done">DATE & TIME</span></div>
+    <div class="ss-line"></div>
+    <div class="ss-step"><div class="ss-sc act">2</div><span class="ss-sl act">SEATS</span></div>
+    <div class="ss-line"></div>
+    <div class="ss-step"><div class="ss-sc pen">3</div><span class="ss-sl pen">PAYMENT</span></div>
+  </div>
+</div>
+
+<!-- MOVIE BAR -->
+<div class="ss-movie-bar">
+  <div style="width:36px;height:50px;border-radius:6px;background:linear-gradient(135deg,#7c3aed,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🎬</div>
+  <div style="flex:1;">
+    <div class="ss-title">{{ show.movie_title }}</div>
+    <div class="ss-meta">
+      <span class="ss-pill v"><i class="fas fa-building" style="font-size:.5rem;"></i> {{ show.theatre_name }}</span>
+      <span class="ss-pill"><i class="fas fa-calendar" style="font-size:.5rem;"></i> {{ show.show_date }}</span>
+      <span class="ss-pill"><i class="fas fa-clock" style="font-size:.5rem;"></i> {{ show.start_time }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="seat-page">
+  <div class="ss-wrap">
+
+    <!-- THEATRE & SEATS -->
+    <div class="ss-theatre">
+
+      <!-- Screen -->
+      <div class="ss-screen-wrap">
+        <div class="ss-screen"></div>
+        <div class="ss-screen-lbl">✦ ALL EYES THIS WAY PLEASE ✦</div>
+      </div>
+
+      <!-- PLATINUM ROW (A) -->
+      <div class="ss-cat">
+        <div class="ss-cat-title"><span>₹{{ (show.price_per_ticket * 1.25)|int }} PLATINUM</span></div>
+        <div class="ss-grid" id="grid-platinum"></div>
+      </div>
+
+      <!-- GOLD ROWS (B–H) -->
+      <div class="ss-cat">
+        <div class="ss-cat-title"><span>₹{{ show.price_per_ticket|int }} GOLD</span></div>
+        <div class="ss-grid" id="grid-gold"></div>
+      </div>
+
+      <!-- LOUNGERS (I) -->
+      <div class="ss-cat">
+        <div class="ss-cat-title"><span>₹{{ (show.price_per_ticket * 1.1)|int }} LOUNGERS</span></div>
+        <div class="ss-grid" id="grid-lounge"></div>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="ss-legend">
+        <div class="ss-leg-item"><div class="ss-leg-swatch sw-avail"></div>Available</div>
+        <div class="ss-leg-item"><div class="ss-leg-swatch sw-sel"></div>Selected</div>
+        <div class="ss-leg-item"><div class="ss-leg-swatch sw-bkd"></div>Booked</div>
+        <div class="ss-leg-item"><div class="ss-leg-swatch" style="background:#3b0f0f;border-color:#ef4444;"></div>Taken</div>
+      </div>
+    </div>
+
+    <!-- SUMMARY PANEL -->
+    <div class="ss-summary">
+      <div class="ss-sum-title"><i class="fas fa-ticket-alt"></i> Booking Summary</div>
+
+      <div class="ss-sum-row">
+        <span class="ss-sum-label">Movie</span>
+        <span class="ss-sum-value">{{ show.movie_title }}</span>
+      </div>
+      <div class="ss-sum-row">
+        <span class="ss-sum-label">Theatre</span>
+        <span class="ss-sum-value">{{ show.theatre_name }}</span>
+      </div>
+      <div class="ss-sum-row">
+        <span class="ss-sum-label">Date</span>
+        <span class="ss-sum-value">{{ show.show_date }}</span>
+      </div>
+      <div class="ss-sum-row">
+        <span class="ss-sum-label">Time</span>
+        <span class="ss-sum-value">{{ show.start_time }}</span>
+      </div>
+      <div class="ss-sum-row">
+        <span class="ss-sum-label">Screen</span>
+        <span class="ss-sum-value">{{ show.screen_number }}</span>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div style="font-size:.72rem;color:rgba(255,255,255,0.35);font-weight:600;margin-bottom:6px;letter-spacing:.5px;">SELECTED SEATS</div>
+        <div class="ss-seats-display" id="seatsDisplay"><span class="ss-no-seats">No seats selected</span></div>
+      </div>
+
+      <div class="ss-sum-row" style="margin-top:12px;">
+        <span class="ss-sum-label">Tickets</span>
+        <span class="ss-sum-value" id="ticketCount">0</span>
+      </div>
+      <div class="ss-sum-row" id="priceBreakdownRow">
+        <span class="ss-sum-label">Price Breakdown</span>
+        <span class="ss-sum-value" id="priceBreakdown" style="font-size:.75rem;line-height:1.6;">—</span>
+      </div>
+
+      <div class="ss-sum-total">
+        <span class="label">Total</span>
+        <span class="val" id="totalAmount">₹0</span>
+      </div>
+
+      <button class="ss-proceed-btn" id="proceedBtn" onclick="proceedToPayment()" disabled>
+        <i class="fas fa-lock-open"></i> Proceed to Payment
+      </button>
+
+      <!-- Lock countdown timer — shown when seats are selected -->
+      <div id="lockCountdown" style="display:none;margin-top:12px;padding:10px 14px;
+           background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);
+           border-radius:8px;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="font-size:.7rem;color:rgba(255,255,255,0.4);font-weight:600;">
+          <i class="fas fa-lock" style="color:#a78bfa;margin-right:4px;"></i>Seats locked for
+        </div>
+        <div id="countdownTime" style="font-size:1rem;font-weight:900;color:#a78bfa;
+             font-variant-numeric:tabular-nums;letter-spacing:1px;">02:00</div>
+      </div>
+
+      <div style="margin-top:14px;text-align:center;font-size:.7rem;color:rgba(255,255,255,0.2);">
+        <i class="fas fa-shield-alt"></i> Secure booking · Instant confirmation
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- HIDDEN FORM -->
+<form id="bookingForm" method="POST" style="display:none;">
+  <input type="hidden" id="seatNumbersInput" name="seat_numbers">
+  <input type="hidden" id="numTicketsInput" name="num_tickets">
+  <input type="hidden" id="totalAmountInput" name="total_amount">
+  <input type="hidden" name="payment_method" value="Online">
+</form>
+
+<script>
+const PRICE   = {{ show.price_per_ticket }};
+const SHOW_ID = {{ show.show_id | tojson }};
+let selectedSeats = new Set();   // seats this user currently has selected+locked
+let bookedSet  = new Set();      // permanently booked (confirmed bookings)
+let lockedSet  = new Set();      // locked by OTHER users right now
+let lockExpiry = null;           // when MY locks expire
+let countdownTimer = null;
+let pollTimer = null;
+
+// ── Seat layout config ──
+const PLATINUM = {rows:['A'], cols:12, gridId:'grid-platinum', aisleAfter:5};
+const GOLD     = {rows:['B','C','D','E','F','G','H'], cols:21, gridId:'grid-gold', aisleAfter:5};
+const LOUNGE   = {rows:['I'], cols:14, gridId:'grid-lounge', aisleAfter:3};
+
+// ── Build seat grid ──
+function buildGrid(cfg){
+  const grid = document.getElementById(cfg.gridId);
+  cfg.rows.forEach(rowLetter => {
+    const row = document.createElement('div');
+    row.className = 'ss-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'ss-row-lbl';
+    lbl.textContent = rowLetter;
+    row.appendChild(lbl);
+    for(let c=1; c<=cfg.cols; c++){
+      if(c === cfg.aisleAfter + 1){
+        const aisle = document.createElement('div');
+        aisle.className = 'ss-aisle';
+        row.appendChild(aisle);
+      }
+      const seatId = rowLetter + c;
+      const seat = document.createElement('div');
+      seat.className = 'seat';
+      seat.id = 'seat-' + seatId;
+      seat.dataset.id = seatId;
+      seat.textContent = c;
+      applySeatState(seat, seatId);
+      seat.addEventListener('click', () => onSeatClick(seat, seatId));
+      row.appendChild(seat);
+    }
+    grid.appendChild(row);
+  });
+}
+
+// ── Apply visual state to a seat element ──
+function applySeatState(el, id){
+  el.className = 'seat';
+  el.title = '';
+  if(bookedSet.has(id)){
+    el.classList.add('seat-booked');
+    el.title = 'Already booked';
+  } else if(lockedSet.has(id)){
+    el.classList.add('seat-locked');
+    el.title = 'Selected by another user — unavailable';
+  } else if(selectedSeats.has(id)){
+    el.classList.add('seat-selected');
+    el.title = 'Your selection';
+  } else {
+    el.classList.add('seat-available');
+    el.title = id;
+  }
+}
+
+// ── Refresh all seat visuals without rebuilding DOM ──
+function refreshAllSeats(){
+  document.querySelectorAll('.seat').forEach(el => {
+    applySeatState(el, el.dataset.id);
+  });
+}
+
+// ── Handle seat click: lock immediately, handle conflicts ──
+async function onSeatClick(el, id){
+  if(bookedSet.has(id) || lockedSet.has(id)) return;   // can't select
+
+  if(selectedSeats.has(id)){
+    // Deselect — unlock on server
+    selectedSeats.delete(id);
+    applySeatState(el, id);
+    updateSummary();
+    await fetch(`/user/api/unlock-seats/${encodeURIComponent(SHOW_ID)}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({seats:[id]})
+    }).catch(()=>{});
+    if(selectedSeats.size === 0) stopCountdown();
+    return;
+  }
+
+  // Select — attempt to lock on server immediately
+  try {
+    const res = await fetch(`/user/api/lock-seats/${encodeURIComponent(SHOW_ID)}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({seats:[id]})
+    });
+    const data = await res.json();
+    if(!res.ok || !data.success){
+      // Conflict — mark as locked and show toast
+      lockedSet.add(id);
+      applySeatState(el, id);
+      showToast(`⚠️ Seat ${id} was just taken by another user!`, 'warning');
+      return;
+    }
+    // Locked successfully
+    selectedSeats.add(id);
+    lockExpiry = new Date(data.locked_until);
+    applySeatState(el, id);
+    updateSummary();
+    startCountdown(data.lock_minutes * 60);
+  } catch(e){
+    showToast('Network error — please try again.', 'error');
+  }
+}
+
+// ── Poll server every 4s to refresh locked/booked states ──
+async function pollSeatStatus(){
+  try {
+    const res = await fetch(`/user/api/seat-status/${encodeURIComponent(SHOW_ID)}`);
+    if(!res.ok) return;
+    const data = await res.json();
+
+    bookedSet = new Set(data.booked || []);
+    const newLocked = new Set(Object.keys(data.locked || {}));
+
+    // If any of MY selected seats got booked by someone else, force-deselect them
+    let lost = [];
+    selectedSeats.forEach(id => {
+      if(bookedSet.has(id)){ lost.push(id); }
+    });
+    lost.forEach(id => {
+      selectedSeats.delete(id);
+      showToast(`⚠️ Seat ${id} was just booked by another user and removed from your selection.`, 'warning');
+    });
+    if(lost.length) updateSummary();
+
+    lockedSet = newLocked;
+    // Don't overwrite my own selections
+    selectedSeats.forEach(id => lockedSet.delete(id));
+
+    refreshAllSeats();
+  } catch(e){ /* silent */ }
+}
+
+// ── Countdown timer for lock expiry ──
+function startCountdown(totalSeconds){
+  stopCountdown();
+  let remaining = totalSeconds;
+  updateCountdownUI(remaining);
+  countdownTimer = setInterval(() => {
+    remaining--;
+    updateCountdownUI(remaining);
+    if(remaining <= 0){
+      stopCountdown();
+      showToast('⏰ Your seat locks have expired. Please reselect.', 'error');
+      selectedSeats.forEach(id => {
+        lockedSet.delete(id);
+      });
+      selectedSeats.clear();
+      refreshAllSeats();
+      updateSummary();
+    }
+  }, 1000);
+}
+
+function stopCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  const el = document.getElementById('lockCountdown');
+  if(el) el.style.display = 'none';
+}
+
+function updateCountdownUI(secs){
+  const el = document.getElementById('lockCountdown');
+  if(!el) return;
+  if(secs <= 0){ el.style.display='none'; return; }
+  el.style.display = 'flex';
+  const m = Math.floor(secs/60);
+  const s = secs % 60;
+  document.getElementById('countdownTime').textContent =
+    `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.style.borderColor = secs < 60 ? 'rgba(239,68,68,0.5)' : 'rgba(124,58,237,0.3)';
+  document.getElementById('countdownTime').style.color = secs < 60 ? '#ef4444' : '#a78bfa';
+}
+
+// ── Price per seat category ──
+function getSeatPrice(seatId){
+  const row = seatId.charAt(0).toUpperCase();
+  if(row === 'A') return Math.round(PRICE * 1.25);      // PLATINUM
+  if(row === 'I') return Math.round(PRICE * 1.1);       // LOUNGERS
+  return PRICE;                                          // GOLD (B-H)
+}
+
+// ── Update booking summary panel ──
+function updateSummary(){
+  const arr = [...selectedSeats].sort();
+  const count = arr.length;
+  const total = arr.reduce((sum, s) => sum + getSeatPrice(s), 0);
+  const disp = document.getElementById('seatsDisplay');
+  disp.innerHTML = count > 0
+    ? arr.map(s=>`<span style="display:inline-block;background:rgba(124,58,237,0.25);border:1px solid rgba(167,139,250,0.4);border-radius:4px;padding:2px 7px;margin:2px;font-size:.75rem;">${s}</span>`).join('')
+    : '<span class="ss-no-seats">No seats selected</span>';
+  document.getElementById('ticketCount').textContent = count;
+
+  // Build per-category price breakdown
+  const breakdown = document.getElementById('priceBreakdown');
+  if(count > 0){
+    const platSeats = arr.filter(s => s.charAt(0).toUpperCase() === 'A');
+    const goldSeats = arr.filter(s => { const r = s.charAt(0).toUpperCase(); return r !== 'A' && r !== 'I'; });
+    const loungeSeats = arr.filter(s => s.charAt(0).toUpperCase() === 'I');
+    const lines = [];
+    if(platSeats.length)  lines.push(`${platSeats.length}× Platinum = ₹${platSeats.reduce((s,id)=>s+getSeatPrice(id),0)}`);
+    if(goldSeats.length)  lines.push(`${goldSeats.length}× Gold = ₹${goldSeats.reduce((s,id)=>s+getSeatPrice(id),0)}`);
+    if(loungeSeats.length) lines.push(`${loungeSeats.length}× Lounger = ₹${loungeSeats.reduce((s,id)=>s+getSeatPrice(id),0)}`);
+    breakdown.innerHTML = lines.map(l=>`<div>${l}</div>`).join('');
+  } else {
+    breakdown.textContent = '—';
+  }
+
+  document.getElementById('totalAmount').textContent = '₹' + total.toFixed(2);
+  document.getElementById('seatNumbersInput').value = arr.join(', ');
+  document.getElementById('numTicketsInput').value = count;
+  document.getElementById('totalAmountInput').value = total;
+  document.getElementById('proceedBtn').disabled = count === 0;
+}
+
+// ── Proceed to payment ──
+function proceedToPayment(){
+  if(selectedSeats.size === 0){ showToast('Please select at least one seat.','warning'); return; }
+  const arr = [...selectedSeats].sort();
+  const total = arr.reduce((sum, s) => sum + getSeatPrice(s), 0);
+
+  // Show custom confirmation modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.80);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  const platSeats = arr.filter(s=>s.charAt(0).toUpperCase()==='A');
+  const goldSeats = arr.filter(s=>{const r=s.charAt(0).toUpperCase();return r!=='A'&&r!=='I';});
+  const loungeSeats = arr.filter(s=>s.charAt(0).toUpperCase()==='I');
+  let breakdown = '';
+  if(platSeats.length)  breakdown += `<div style="display:flex;justify-content:space-between;"><span>Platinum (${platSeats.join(', ')})</span><span>₹${platSeats.reduce((s,id)=>s+getSeatPrice(id),0)}</span></div>`;
+  if(goldSeats.length)  breakdown += `<div style="display:flex;justify-content:space-between;"><span>Gold (${goldSeats.join(', ')})</span><span>₹${goldSeats.reduce((s,id)=>s+getSeatPrice(id),0)}</span></div>`;
+  if(loungeSeats.length) breakdown += `<div style="display:flex;justify-content:space-between;"><span>Loungers (${loungeSeats.join(', ')})</span><span>₹${loungeSeats.reduce((s,id)=>s+getSeatPrice(id),0)}</span></div>`;
+
+  overlay.innerHTML = `
+    <div style="background:#12121f;border:1px solid rgba(124,58,237,0.4);border-radius:18px;width:min(440px,92vw);padding:28px 26px;box-shadow:0 24px 60px rgba(0,0,0,.7);">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🎬</div>
+        <div>
+          <div style="color:#fff;font-weight:800;font-size:1.05rem;">Confirm Booking</div>
+          <div style="color:rgba(255,255,255,.4);font-size:.75rem;">Review your selection before proceeding</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:.82rem;color:rgba(255,255,255,.65);display:flex;flex-direction:column;gap:8px;">
+        ${breakdown}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(59,130,246,0.1));border:1px solid rgba(124,58,237,0.35);border-radius:10px;padding:13px 16px;margin-bottom:22px;">
+        <span style="color:rgba(255,255,255,.6);font-weight:600;font-size:.85rem;">Total Amount</span>
+        <span style="color:#a78bfa;font-size:1.35rem;font-weight:900;">₹${total.toFixed(2)}</span>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button id="cancelBookBtn" style="flex:1;padding:13px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:rgba(255,255,255,.6);font-size:.88rem;font-weight:600;cursor:pointer;">Cancel</button>
+        <button id="confirmBookBtn" style="flex:2;padding:13px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border:none;border-radius:10px;color:#fff;font-size:.92rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(124,58,237,0.4);display:flex;align-items:center;justify-content:center;gap:8px;">
+          <i class="fas fa-check"></i> Confirm & Pay ₹${total.toFixed(2)}
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cancelBookBtn').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+  overlay.querySelector('#confirmBookBtn').onclick = () => {
+    overlay.remove();
+    clearInterval(pollTimer);
+    stopCountdown();
+    document.getElementById('bookingForm').submit();
+  };
+}
+
+// ── Toast notification ──
+function showToast(msg, type='info'){
+  const colors = {warning:'#f59e0b', error:'#ef4444', info:'#3b82f6', success:'#22c55e'};
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;
+    background:#1a1a2e;border:1px solid ${colors[type]||colors.info};
+    color:#fff;padding:12px 18px;border-radius:10px;font-size:.84rem;font-weight:600;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);max-width:320px;line-height:1.4;
+    animation:slideIn .25s ease;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4500);
+}
+
+// ── Unlock all my seats when leaving the page ──
+window.addEventListener('beforeunload', () => {
+  if(selectedSeats.size > 0){
+    navigator.sendBeacon(
+      `/user/api/unlock-seats/${encodeURIComponent(SHOW_ID)}`,
+      new Blob([JSON.stringify({seats:[...selectedSeats]})], {type:'application/json'})
+    );
+  }
+});
+
+// ── Init: fetch seat status then build grids, then start polling ──
+async function initSeats(){
+  try {
+    const res = await fetch(`/user/api/seat-status/${encodeURIComponent(SHOW_ID)}`);
+    if(res.ok){
+      const data = await res.json();
+      bookedSet = new Set(data.booked || []);
+      lockedSet = new Set(Object.keys(data.locked || {}));
+    }
+  } catch(e){}
+  buildGrid(PLATINUM);
+  buildGrid(GOLD);
+  buildGrid(LOUNGE);
+  // Poll every 4 seconds for real-time updates
+  pollTimer = setInterval(pollSeatStatus, 4000);
+}
+
+initSeats();
+</script>
+
+{% endblock %}

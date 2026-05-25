@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+{% block title %}Book – {{ movie.title }} | CineVerse{% endblock %}
+{% block content %}
+
+{% set cinematic_posters = [
+  'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1400&q=95',
+  'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1400&q=95',
+  'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1400&q=95',
+  'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1400&q=95',
+  'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=1400&q=95',
+  'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=1400&q=95',
+  'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=1400&q=95',
+  'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1400&q=95',
+  'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=1400&q=95',
+  'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=1400&q=95'
+] %}
+{% set _mid_str = movie.movie_id | string | replace('MOV','') | replace('M','') | replace('m','') %}
+{% if _mid_str | int(-1) >= 0 %}
+  {% set movie_img = cinematic_posters[(_mid_str | int) % (cinematic_posters|length)] %}
+{% else %}
+  {% set movie_img = cinematic_posters[0] %}
+{% endif %}
+
+<style>
+*{box-sizing:border-box;}
+body{background:#06060f;}
+
+/* STEP BAR */
+.bk-steps{background:#0a0a16;border-bottom:1px solid rgba(255,255,255,0.07);padding:14px 0;}
+.bk-steps-inner{display:flex;align-items:center;justify-content:center;max-width:500px;margin:0 auto;}
+.bk-step{display:flex;align-items:center;gap:8px;}
+.bk-sc{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;}
+.bk-sc.act{background:linear-gradient(135deg,#e50914,#ff4444);color:#fff;box-shadow:0 0 18px rgba(229,9,20,0.55);}
+.bk-sc.pen{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.1);}
+.bk-sl{font-size:.65rem;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;}
+.bk-sl.act{color:#fff;}.bk-sl.pen{color:rgba(255,255,255,0.25);}
+.bk-sline{height:1px;background:rgba(255,255,255,0.1);margin:0 12px;width:60px;}
+
+/* MOVIE BAR */
+.bk-movie-bar{background:linear-gradient(135deg,#16082e 0%,#0c0c1e 100%);border-bottom:1px solid rgba(255,255,255,0.08);padding:12px 20px;display:flex;align-items:center;gap:14px;}
+.bk-mv-thumb{width:36px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid rgba(255,255,255,0.16);}
+.bk-mv-title{color:#fff;font-weight:800;font-size:1rem;line-height:1.2;}
+.bk-mv-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.bk-pill{border:1px solid rgba(255,255,255,0.18);border-radius:4px;padding:2px 8px;font-size:.63rem;color:rgba(255,255,255,0.5);}
+.bk-pill.lang{border-color:rgba(100,140,255,0.5);color:rgba(130,170,255,0.9);background:rgba(100,140,255,0.08);}
+.bk-pill.genre{border-color:rgba(229,9,20,0.5);color:rgba(255,120,120,0.9);background:rgba(229,9,20,0.08);}
+
+/* DATE STRIP */
+.bk-date-strip{background:#0b0b1a;border-bottom:1px solid rgba(255,255,255,0.07);padding:20px 22px 22px;}
+.bk-date-lbl{font-size:.6rem;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:7px;margin-bottom:14px;}
+.bk-date-scroll{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.bk-date-scroll::-webkit-scrollbar{display:none;}
+.bk-date-btn{
+  flex-shrink:0;background:rgba(255,255,255,0.04);border:2px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:14px 16px;cursor:pointer;text-align:center;min-width:76px;
+  transition:all .22s ease;display:flex;flex-direction:column;align-items:center;gap:4px;
+  position:relative;overflow:hidden;
+}
+.bk-date-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(229,9,20,0.15),transparent);opacity:0;transition:opacity .22s;}
+.bk-date-btn:hover{border-color:rgba(229,9,20,0.45);transform:translateY(-2px);box-shadow:0 6px 20px rgba(229,9,20,0.15);}
+.bk-date-btn:hover::before,.bk-date-btn.active::before{opacity:1;}
+.bk-date-btn.active{border-color:#e50914;background:rgba(229,9,20,0.18);box-shadow:0 6px 22px rgba(229,9,20,0.3);}
+.d-tag{font-size:.58rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.32);}
+.bk-date-btn.active .d-tag{color:#ff6b6b;}
+.d-num{font-size:1.65rem;font-weight:900;color:rgba(255,255,255,0.5);line-height:1;}
+.bk-date-btn.active .d-num{color:#fff;}
+.d-month{font-size:.6rem;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,0.25);letter-spacing:1px;}
+.bk-date-btn.active .d-month{color:rgba(255,200,200,0.8);}
+
+/* MAIN BODY */
+.bk-slot-section{background:#06060f;min-height:60vh;padding:0;}
+.bk-panel{display:none;}
+.bk-panel.active{display:block;}
+
+/* Theatre group */
+.bk-theatre-group{padding:24px 22px 8px;}
+.bk-shows-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
+.bk-theatre-hint{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.bk-theatre-hint-dot{width:8px;height:8px;border-radius:50%;background:#e50914;flex-shrink:0;}
+.bk-theatre-heading{font-size:.72rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.85);}
+.bk-theatre-sub{
+  font-size:.62rem;color:#e50914;font-weight:600;letter-spacing:.4px;
+  margin-bottom:16px;margin-left:16px;display:flex;align-items:center;gap:5px;
+}
+.bk-theatre-sub i{font-size:.55rem;}
+
+/* Show card — Image 2 style: full-width row */
+.bk-show-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;padding:18px 22px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  cursor:pointer;text-decoration:none;transition:all .2s ease;
+}
+.bk-show-card:hover{
+  border-color:rgba(229,9,20,0.35);background:rgba(229,9,20,0.05);
+  transform:translateY(-1px);box-shadow:0 6px 24px rgba(229,9,20,0.1);
+}
+.bk-show-left{display:flex;flex-direction:column;gap:8px;}
+.bk-show-time{font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1;}
+.bk-show-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+/* Format badge */
+.bk-fmt-badge{
+  font-size:.58rem;font-weight:800;letter-spacing:1.5px;
+  padding:3px 8px;border-radius:4px;
+  background:rgba(255,180,0,0.12);border:1px solid rgba(255,180,0,0.35);color:#fbbf24;
+}
+/* Availability pill */
+.bk-seats-pill{display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;}
+.bk-seats-pill .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.bk-seats-pill.grn{color:#4ade80;}.bk-seats-pill.grn .dot{background:#4ade80;}
+.bk-seats-pill.ylw{color:#fbbf24;}.bk-seats-pill.ylw .dot{background:#fbbf24;}
+.bk-seats-pill.red{color:#f87171;}.bk-seats-pill.red .dot{background:#f87171;}
+
+.bk-show-right{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.bk-price-amt{font-size:1rem;font-weight:800;color:#e50914;text-align:right;}
+.bk-price-lbl{font-size:.6rem;color:rgba(255,255,255,0.3);font-weight:500;text-align:right;}
+
+/* Select Seats button */
+.bk-select-btn{
+  background:#e50914;border:none;border-radius:8px;
+  padding:11px 18px;color:#fff;font-size:.78rem;font-weight:700;
+  display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;
+  transition:all .2s;box-shadow:0 4px 16px rgba(229,9,20,0.3);
+}
+.bk-select-btn:hover{background:#c0000f;box-shadow:0 6px 22px rgba(229,9,20,0.45);transform:translateY(-1px);}
+.bk-select-btn.login-btn{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);box-shadow:none;}
+.bk-select-btn.login-btn:hover{background:rgba(255,255,255,0.13);transform:none;}
+
+.bk-theatre-sep{height:1px;background:rgba(255,255,255,0.05);margin:4px 22px 0;}
+
+/* Empty */
+.bk-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.28);}
+.bk-empty i{font-size:2.5rem;display:block;margin-bottom:14px;color:rgba(229,9,20,0.3);}
+
+/* SNACKS MODAL */
+.snacks-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);align-items:center;justify-content:center;}
+.snacks-overlay.active{display:flex;}
+.snacks-modal{background:#12121f;border:1px solid rgba(255,255,255,0.1);border-radius:20px;width:92%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;animation:snkPop .28s ease;overflow:hidden;}
+@keyframes snkPop{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.snacks-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 13px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.snacks-close{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:32px;height:32px;color:rgba(255,255,255,0.55);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.snacks-list{flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;gap:9px;}
+.snk-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:11px;padding:12px;display:flex;align-items:center;gap:12px;transition:all .2s;}
+.snk-item.has-qty{border-color:rgba(229,9,20,0.38);background:rgba(229,9,20,0.05);}
+.snk-emoji{font-size:1.8rem;width:40px;text-align:center;flex-shrink:0;}
+.snk-info{flex:1;}.snk-name{color:#fff;font-weight:700;font-size:.88rem;}
+.snk-desc{color:rgba(255,255,255,0.36);font-size:.7rem;margin-top:1px;}
+.snk-price{color:#e50914;font-weight:800;font-size:.88rem;margin-top:2px;}
+.snk-ctr{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.snk-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);border-radius:7px;width:28px;height:28px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .18s;}
+.snk-btn:hover{background:#e50914;border-color:#e50914;}
+.snk-qty{color:#fff;font-weight:700;font-size:.92rem;min-width:18px;text-align:center;}
+.snacks-ft{border-top:1px solid rgba(255,255,255,0.07);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.28);flex-shrink:0;}
+.snk-skip{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);border-radius:9px;padding:10px 16px;color:rgba(255,255,255,0.5);font-size:.83rem;font-weight:600;cursor:pointer;}
+.snk-go{background:#e50914;border:none;border-radius:9px;padding:10px 20px;color:#fff;font-size:.86rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(229,9,20,0.33);}
+
+@media(max-width:600px){
+  .bk-date-btn{min-width:64px;padding:12px 10px;}
+  .d-num{font-size:1.4rem;}
+  .bk-show-card{flex-wrap:wrap;gap:12px;}
+  .bk-show-time{font-size:1.2rem;}
+  .bk-select-btn{padding:9px 14px;font-size:.72rem;}
+}
+</style>
+
+<!-- STEP PROGRESS -->
+<div class="bk-steps">
+  <div class="bk-steps-inner">
+    <div class="bk-step"><div class="bk-sc act">1</div><span class="bk-sl act">DATE & TIME</span></div>
+    <div class="bk-sline"></div>
+    <div class="bk-step"><div class="bk-sc pen">2</div><span class="bk-sl pen">SEATS</span></div>
+    <div class="bk-sline"></div>
+    <div class="bk-step"><div class="bk-sc pen">3</div><span class="bk-sl pen">PAYMENT</span></div>
+  </div>
+</div>
+
+<!-- MOVIE BAR -->
+<div class="bk-movie-bar">
+  <img src="{{ movie_img }}" alt="{{ movie.title }}" class="bk-mv-thumb">
+  <div style="flex:1;">
+    <div class="bk-mv-title">{{ movie.title }}</div>
+    <div class="bk-mv-meta">
+      {% if movie.language %}<span class="bk-pill lang">{{ movie.language }}</span>{% endif %}
+      {% if movie.genre %}<span class="bk-pill genre">{{ movie.genre }}</span>{% endif %}
+      {% if movie.duration %}<span class="bk-pill"><i class="fas fa-clock" style="font-size:.5rem;"></i> {{ (movie.duration//60)|int }}h {{ movie.duration%60 }}m</span>{% endif %}
+    </div>
+  </div>
+  <a href="{{ url_for('public.movie_detail', movie_id=movie.movie_id) }}" style="color:rgba(255,255,255,0.32);font-size:.95rem;text-decoration:none;padding:8px;" title="Back">
+    <i class="fas fa-arrow-left"></i>
+  </a>
+</div>
+
+<!-- DATE SELECTOR — 7 days -->
+<div class="bk-date-strip">
+  <div class="bk-date-lbl"><i class="fas fa-calendar-alt" style="color:#e50914;"></i> SELECT DATE</div>
+  <div class="bk-date-scroll" id="dateScroll">
+    {% if sorted_dates %}
+      {% for d in sorted_dates[:7] %}
+        {% set parts = d.split('-') %}
+        {% set months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'] %}
+        <button class="bk-date-btn {% if loop.first %}active{% endif %}" data-date="{{ d }}" id="dbtn-{{ d }}" onclick="switchDate('{{ d }}',this)">
+          <span class="d-tag" id="dtag-{{ d }}">···</span>
+          <span class="d-num">{{ parts[2]|int }}</span>
+          <span class="d-month">{{ months[parts[1]|int-1] }}</span>
+        </button>
+      {% endfor %}
+    {% else %}
+      <div style="color:rgba(255,255,255,0.28);padding:10px;">No upcoming shows</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SHOWS BODY -->
+<div class="bk-slot-section">
+  {% if dates_map %}
+    {% for d, theatres in dates_map.items() %}
+    <div class="bk-panel {% if loop.first %}active{% endif %}" id="panel-{{ d }}">
+      {% for theatre_name, shows in theatres.items() %}
+      {% set first = shows[0] %}
+
+      <div class="bk-theatre-group">
+        <div class="bk-theatre-hint">
+          <div class="bk-theatre-hint-dot"></div>
+          <div class="bk-theatre-heading">
+            SELECT SHOW &mdash; {{ theatre_name | upper }}{% if first.screen_number %}, SCREEN {{ first.screen_number }}{% endif %}
+          </div>
+        </div>
+        <div class="bk-theatre-sub">
+          <i class="fas fa-bolt"></i>
+          Tap a show time to instantly go to seat selection
+        </div>
+
+        <!-- Show rows — each is a full-width card -->
+        {% set fmt_cycle = ['2D','2D','4DX','IMAX','2D'] %}
+        <div class="bk-shows-list">
+        {% for show in shows %}
+          {% set seats = show.available_seats %}
+          {% set sc = 'grn' if seats > 30 else ('ylw' if seats > 10 else 'red') %}
+          {% if seats > 30 %}
+            {% set seats_txt = seats|string + ' seats available' %}
+          {% elif seats > 10 %}
+            {% set seats_txt = seats|string + ' seats available' %}
+          {% else %}
+            {% set seats_txt = 'Few seats left (' + seats|string + ')' %}
+          {% endif %}
+          {% set fmt = fmt_cycle[loop.index0 % 5] %}
+
+          {% if session.get('role') == 'user' %}
+          <div class="bk-show-card" onclick="window.location.href='{{ url_for('user.book_ticket', show_id=show.show_id) }}'">
+          {% else %}
+          <a href="{{ url_for('auth.login') }}" class="bk-show-card">
+          {% endif %}
+            <div class="bk-show-left">
+              <div class="bk-show-time">{{ show.start_time }}</div>
+              <div class="bk-show-tags">
+                <span class="bk-fmt-badge">{{ fmt }}</span>
+                <span class="bk-seats-pill {{ sc }}">
+                  <span class="dot"></span>
+                  {{ seats_txt }}
+                </span>
+              </div>
+            </div>
+            <div class="bk-show-right">
+              <div>
+                <div class="bk-price-amt">&#8377;{{ show.price_per_ticket|int }}</div>
+                <div class="bk-price-lbl">onwards/ticket</div>
+              </div>
+              {% if session.get('role') == 'user' %}
+              <button class="bk-select-btn" onclick="event.stopPropagation();window.location.href='{{ url_for('user.book_ticket', show_id=show.show_id) }}'">
+                <i class="fas fa-couch"></i> Select Seats
+              </button>
+              {% else %}
+              <span class="bk-select-btn login-btn"><i class="fas fa-lock"></i> Login to Book</span>
+              {% endif %}
+            </div>
+          {% if session.get('role') == 'user' %}</div>{% else %}</a>{% endif %}
+        {% endfor %}
+        </div>
+      </div>
+
+      <div class="bk-theatre-sep"></div>
+      <div style="margin-bottom:16px;"></div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="bk-empty">
+      <i class="fas fa-calendar-times"></i>
+      <h5 style="color:rgba(255,255,255,0.45);margin-bottom:6px;">No Shows Available</h5>
+      <p style="font-size:.85rem;">Check back soon for upcoming shows.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- DATE SWITCH + SMART TIME FILTER JS -->
+<script>
+/* ── Helpers ── */
+function getTodayStr(){
+  const n=new Date();
+  return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+}
+
+/* Convert "HH:MM AM/PM" or "HH:MM" to total minutes since midnight */
+function timeToMinutes(t){
+  if(!t) return 9999;
+  t = t.trim();
+  const ampm = /([ap]m)/i.exec(t);
+  const nums  = t.replace(/[apm]/gi,'').trim().split(':');
+  let h = parseInt(nums[0]||0);
+  let m = parseInt(nums[1]||0);
+  if(ampm){
+    const ap = ampm[1].toLowerCase();
+    if(ap==='pm' && h!==12) h+=12;
+    if(ap==='am' && h===12) h=0;
+  }
+  return h*60+m;
+}
+
+/* ── Filter shows on today's panel: hide past slots, dim near-now slots ── */
+function filterTodayShows(){
+  const todayStr = getTodayStr();
+  const panel = document.getElementById('panel-'+todayStr);
+  if(!panel) return; // not today — nothing to filter
+
+  const now = new Date();
+  const nowMins = now.getHours()*60 + now.getMinutes();
+
+  let anyVisible = false;
+  let firstUpcoming = null;
+
+  /* Each show card has .bk-show-time inside */
+  panel.querySelectorAll('.bk-show-card, a.bk-show-card').forEach(function(card){
+    const timeEl = card.querySelector('.bk-show-time');
+    if(!timeEl) return;
+    const showMins = timeToMinutes(timeEl.textContent);
+    const minsLeft = showMins - nowMins;
+
+    if(minsLeft < 0){
+      /* Show already started / over — hide completely */
+      card.style.display = 'none';
+    } else if(minsLeft < 2){
+      /* Starts within 2 min — BOARDING: disable booking, show blocked badge */
+      card.style.display = '';
+      card.style.opacity = '0.55';
+      card.style.pointerEvents = 'none';
+      card.style.cursor = 'not-allowed';
+      card.style.position = 'relative';
+      if(!card.querySelector('.time-warning-badge')){
+        const badge = document.createElement('span');
+        badge.className = 'time-warning-badge';
+        badge.style.cssText = 'position:absolute;top:10px;right:12px;background:#ef4444;color:#fff;font-size:.65rem;font-weight:800;padding:2px 10px;border-radius:20px;letter-spacing:.5px;z-index:5;pointer-events:none;';
+        badge.textContent = 'BOARDING — CLOSED';
+        card.appendChild(badge);
+      }
+      anyVisible = true;
+      /* Don't set as firstUpcoming since it's blocked */
+    } else {
+      /* Future show — fully visible */
+      card.style.display = '';
+      card.style.opacity = '1';
+      card.style.pointerEvents = '';
+      anyVisible = true;
+      if(!firstUpcoming) firstUpcoming = card;
+    }
+  });
+
+  /* Hide theatre groups where ALL shows are hidden */
+  panel.querySelectorAll('.bk-theatre-group').forEach(function(group){
+    const visible = Array.from(group.querySelectorAll('.bk-show-card, a.bk-show-card'))
+                         .some(c => c.style.display !== 'none');
+    group.style.display = visible ? '' : 'none';
+  });
+
+  /* If no shows left for today, show a nice "No more shows today" message */
+  if(!anyVisible){
+    if(!panel.querySelector('.no-more-shows-msg')){
+      const msg = document.createElement('div');
+      msg.className = 'no-more-shows-msg';
+      msg.style.cssText = 'text-align:center;padding:56px 24px;';
+      msg.innerHTML = `
+        <div style="font-size:3rem;margin-bottom:16px;">🎬</div>
+        <div style="color:#fff;font-weight:800;font-size:1.1rem;margin-bottom:8px;">No More Shows Today</div>
+        <div style="color:rgba(255,255,255,0.42);font-size:.88rem;line-height:1.6;max-width:300px;margin:0 auto 20px;">
+          All shows for today have already started.<br>Check tomorrow's shows below.
+        </div>
+        <div style="color:rgba(229,9,20,0.8);font-size:.78rem;font-weight:700;letter-spacing:.5px;">
+          <i class="fas fa-arrow-right me-1"></i> SELECT TOMORROW FROM THE DATE BAR ABOVE
+        </div>`;
+      panel.prepend(msg);
+    }
+  }
+
+  /* Scroll first upcoming show into view smoothly */
+  if(firstUpcoming){
+    setTimeout(function(){
+      firstUpcoming.scrollIntoView({behavior:'smooth', block:'center'});
+    }, 300);
+  }
+}
+
+/* ── Label date buttons (TODAY / TMR / MON etc.) ── */
+(function labelDates(){
+  const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+  const DAY = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  document.querySelectorAll('.bk-date-btn').forEach(function(btn){
+    const d = btn.dataset.date; if(!d) return;
+    const p = d.split('-');
+    const dt = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+    const tag = btn.querySelector('.d-tag');
+    if(tag){
+      if(dt.toDateString()===TODAY.toDateString()) tag.textContent = 'TODAY';
+      else {
+        const tmr = new Date(TODAY); tmr.setDate(tmr.getDate()+1);
+        tag.textContent = dt.toDateString()===tmr.toDateString() ? 'TMR' : DAY[dt.getDay()];
+      }
+    }
+  });
+})();
+
+/* ── Switch date panel ── */
+function switchDate(date, btn){
+  document.querySelectorAll('.bk-panel').forEach(p=>p.classList.remove('active'));
+  const panel = document.getElementById('panel-'+date);
+  if(panel) panel.classList.add('active');
+  document.querySelectorAll('.bk-date-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ── Run filter on page load for today's panel ── */
+window.addEventListener('DOMContentLoaded', function(){
+  filterTodayShows();
+
+  /* Re-run every minute to auto-hide shows as time passes */
+  setInterval(filterTodayShows, 60000);
+});
+
+/* ── Also filter when user manually switches to today's date tab ── */
+const _origSwitchDate = switchDate;
+window.switchDate = function(date, btn){
+  _origSwitchDate(date, btn);
+  if(date === getTodayStr()) filterTodayShows();
+};
+</script>
+
+<!-- SNACKS MODAL -->
+<div class="snacks-overlay" id="snacksOverlay">
+  <div class="snacks-modal">
+    <div class="snacks-hd">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <div style="background:linear-gradient(135deg,#e50914,#ff6b35);border-radius:11px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">🍿</div>
+        <div>
+          <div style="color:#fff;font-weight:800;font-size:.97rem;">Snacks & Beverages</div>
+          <div style="color:rgba(255,255,255,0.42);font-size:.72rem;" id="snacksShowInfo">Optional — pre-order before seats</div>
+        </div>
+      </div>
+      <button class="snacks-close" onclick="closeSnacksModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="padding:6px 18px 3px;font-size:.7rem;color:rgba(229,9,20,0.8);font-weight:600;letter-spacing:.4px;">
+      <i class="fas fa-tag me-1"></i>OPTIONAL — ADD ITEMS BEFORE SEAT SELECTION
+    </div>
+    <div class="snacks-list" id="snacksList"></div>
+    <div class="snacks-ft">
+      <div>
+        <div style="color:rgba(255,255,255,0.42);font-size:.7rem;">Snacks Total</div>
+        <div style="color:#fff;font-weight:800;font-size:1.05rem;" id="snacksTotalDisplay">₹0</div>
+      </div>
+      <div style="display:flex;gap:9px;">
+        <button class="snk-skip" onclick="proceedToSeats(false)"><i class="fas fa-forward me-1"></i>Skip</button>
+        <button class="snk-go" id="snkProceedBtn" onclick="proceedToSeats(true)"><i class="fas fa-couch me-2"></i>Select Seats</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SNACK_ITEMS=[
+  {id:'popcorn_butter',emoji:'🍿',name:'Butter Popcorn (Large)',desc:'Freshly popped with extra butter',price:180},
+  {id:'popcorn_cheese',emoji:'🧀',name:'Cheese Popcorn (Medium)',desc:'Loaded with cheddar cheese dust',price:150},
+  {id:'nachos',emoji:'🌮',name:'Nachos with Salsa',desc:'Crispy nachos + tangy salsa dip',price:160},
+  {id:'cold_drink',emoji:'🥤',name:'Cold Drink (Large)',desc:'Pepsi / Coke / Sprite',price:90},
+  {id:'coffee',emoji:'☕',name:'Hot Coffee / Cappuccino',desc:'Fresh brewed, served hot',price:120},
+  {id:'combo',emoji:'🎉',name:'Combo (Popcorn + Drink)',desc:'Large popcorn + any cold drink',price:250},
+  {id:'hotdog',emoji:'🌭',name:'Hot Dog',desc:'Juicy dog with mustard & ketchup',price:140},
+];
+let snacksCart={},snacksDestUrl='';
+function openSnacksModal(url,time,date,price){
+  snacksDestUrl=url;snacksCart={};
+  document.getElementById('snacksShowInfo').textContent=date+' · '+time;
+  renderSnacks();
+  document.getElementById('snacksOverlay').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeSnacksModal(){
+  document.getElementById('snacksOverlay').classList.remove('active');
+  document.body.style.overflow='';
+}
+function renderSnacks(){
+  document.getElementById('snacksList').innerHTML=SNACK_ITEMS.map(item=>`
+    <div class="snk-item" id="sitem-${item.id}">
+      <div class="snk-emoji">${item.emoji}</div>
+      <div class="snk-info">
+        <div class="snk-name">${item.name}</div>
+        <div class="snk-desc">${item.desc}</div>
+        <div class="snk-price">₹${item.price}</div>
+      </div>
+      <div class="snk-ctr">
+        <button class="snk-btn" onclick="changeQty('${item.id}',-1)"><i class="fas fa-minus" style="font-size:.6rem;"></i></button>
+        <span class="snk-qty" id="qty-${item.id}">0</span>
+        <button class="snk-btn" onclick="changeQty('${item.id}',1)"><i class="fas fa-plus" style="font-size:.6rem;"></i></button>
+      </div>
+    </div>`).join('');
+  updateSnacksTotal();
+}
+function changeQty(id,delta){
+  snacksCart[id]=Math.max(0,Math.min(5,(snacksCart[id]||0)+delta));
+  const el=document.getElementById('qty-'+id);
+  if(el) el.textContent=snacksCart[id];
+  const item=document.getElementById('sitem-'+id);
+  if(item) item.classList.toggle('has-qty',snacksCart[id]>0);
+  updateSnacksTotal();
+}
+function updateSnacksTotal(){
+  let total=0;
+  SNACK_ITEMS.forEach(item=>{total+=(snacksCart[item.id]||0)*item.price;});
+  document.getElementById('snacksTotalDisplay').textContent='₹'+total;
+  document.getElementById('snkProceedBtn').innerHTML=total>0
+    ?'<i class="fas fa-couch me-2"></i>Select Seats (₹'+total+' added)'
+    :'<i class="fas fa-couch me-2"></i>Select Seats';
+}
+function proceedToSeats(withSnacks){
+  let url=snacksDestUrl;
+  if(withSnacks){
+    const items=SNACK_ITEMS.filter(i=>(snacksCart[i.id]||0)>0).map(i=>i.name+'×'+snacksCart[i.id]).join(', ');
+    const total=SNACK_ITEMS.reduce((s,i)=>s+(snacksCart[i.id]||0)*i.price,0);
+    if(items) url+=(url.includes('?')?'&':'?')+'snacks='+encodeURIComponent(items)+'&snacks_total='+total;
+  }
+  closeSnacksModal();
+  window.location.href=url;
+}
+</script>
+
+{% endblock %}

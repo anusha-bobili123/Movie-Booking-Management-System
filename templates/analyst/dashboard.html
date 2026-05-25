@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Analyst Dashboard – CineVerse</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --analyst-accent: #7c3aed;
+      --analyst-accent2: #a855f7;
+      --analyst-glow: rgba(124, 58, 237, 0.25);
+    }
+    .sb-label-analyst { color: var(--analyst-accent2) !important; }
+    .sb-link.analyst-active, .sb-link.analyst-active:hover { background: rgba(124,58,237,.18); color: var(--analyst-accent2) !important; border-left: 3px solid var(--analyst-accent2); }
+    .stat-card-analyst { background: linear-gradient(135deg, #1a0a2e 0%, #12121f 100%); border: 1px solid rgba(124,58,237,.3); border-radius: 14px; padding: 22px 24px; position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s; }
+    .stat-card-analyst:hover { transform: translateY(-3px); box-shadow: 0 8px 32px var(--analyst-glow); }
+    .stat-card-analyst .stat-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(124,58,237,.2); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--analyst-accent2); margin-bottom: 14px; }
+    .stat-card-analyst .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: #fff; line-height: 1; }
+    .stat-card-analyst .stat-label { font-size: 12px; color: var(--text-muted, #888); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+    .stat-card-analyst .glow-bg { position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; background: var(--analyst-glow); filter: blur(20px); }
+    .chart-card { background: #12121f; border: 1px solid #1e1e35; border-radius: 14px; padding: 24px; height: 100%; }
+    .chart-card .chart-title { font-size: 13px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .chart-card .chart-title i { color: var(--analyst-accent2); }
+    .analyst-table { background: #12121f; border: 1px solid #1e1e35; border-radius: 14px; overflow: hidden; }
+    .analyst-table table { margin: 0; }
+    .analyst-table thead th { background: #1a1a30; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #1e1e35; padding: 12px 16px; }
+    .analyst-table tbody td { color: #ccc; font-size: 13px; padding: 11px 16px; border-bottom: 1px solid #0e0e1e; vertical-align: middle; }
+    .analyst-table tbody tr:last-child td { border-bottom: none; }
+    .analyst-table tbody tr:hover td { background: rgba(124,58,237,.06); }
+    .badge-genre { background: rgba(124,58,237,.2); color: var(--analyst-accent2); font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+    .rank-num { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--analyst-accent2); min-width: 28px; }
+    .star-rating { color: #f4c430; font-size: 12px; }
+    .section-divider { border-top: 1px solid rgba(124,58,237,0.25); padding-top: 8px; }
+    .section-divider-label { font-size: 13px; font-weight: 700; color: var(--analyst-accent2); text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; background: rgba(124,58,237,0.12); padding: 6px 16px; border-radius: 20px; }
+  </style>
+</head>
+<body>
+<div id="toastBox" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+<div class="panel-body">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="brand-icon"><i class="fas fa-chart-bar"></i></div>
+      <span>CineVerse</span>
+    </div>
+    <div class="sb-label sb-label-analyst">Analyst Panel</div>
+    <a href="{{ url_for('analyst.dashboard') }}" class="sb-link analyst-active"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
+    <div class="sb-divider"></div>
+    <a href="{{ url_for('public.home') }}" class="sb-link"><i class="fas fa-globe"></i>Public Site</a>
+    <a href="{{ url_for('auth.logout') }}" class="sb-link danger-link"><i class="fas fa-sign-out-alt"></i>Logout</a>
+  </aside>
+
+  <div class="panel-main">
+    <div class="topbar">
+      <button class="btn btn-sm btn-outline-secondary" id="sbToggle"><i class="fas fa-bars"></i></button>
+      <span class="topbar-title">Analytics Dashboard</span>
+      <div class="topbar-user">
+        <div class="avatar-sm" style="background:var(--analyst-accent)">{{ session.get('user_name','A')[0].upper() }}</div>
+        <div class="d-none d-md-block">
+          <div class="fw-semibold small" style="color:#fff">{{ session.get('user_name','Analyst') }}</div>
+          <div style="font-size:11px;color:var(--text-muted,#888)">Data Analyst</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-content">
+
+      <!-- STAT CARDS -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-film"></i></div>
+            <div class="stat-num">{{ stats.total_movies }}</div>
+            <div class="stat-label">Total Movies</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-building"></i></div>
+            <div class="stat-num">{{ stats.total_theatres }}</div>
+            <div class="stat-label">Theatres</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+            <div class="stat-num">{{ stats.total_shows }}</div>
+            <div class="stat-label">Total Shows</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-num">{{ stats.total_users }}</div>
+            <div class="stat-label">Registered Users</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW 1 -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-tags"></i> Movies by Genre</div>
+            <canvas id="genreChart" height="220"></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-language"></i> Language Distribution</div>
+            <canvas id="langChart" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW 2 -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-map-marker-alt"></i> Theatres per City</div>
+            <canvas id="cityChart" height="220"></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-star"></i> Avg Rating by Genre</div>
+            <canvas id="ratingChart" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLES ROW -->
+      <div class="row g-3 mb-4">
+        <!-- Top Movies by Shows -->
+        <div class="col-md-7">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-trophy"></i> Top Movies by Show Count</div>
+            <div class="analyst-table">
+              <table class="table table-borderless mb-0">
+                <thead><tr>
+                  <th>#</th><th>Title</th><th>Genre</th><th>Rating</th><th>Shows</th>
+                </tr></thead>
+                <tbody>
+                  {% for i, m in enumerate(top_movies) %}
+                  <tr>
+                    <td><span class="rank-num">{{ i+1 }}</span></td>
+                    <td style="color:#fff;font-weight:600">{{ m.title }}</td>
+                    <td>{% if m.genre %}<span class="badge-genre">{{ m.genre }}</span>{% else %}-{% endif %}</td>
+                    <td>{% if m.rating %}<span class="star-rating"><i class="fas fa-star"></i></span> {{ "%.1f"|format(m.rating) }}{% else %}-{% endif %}</td>
+                    <td><span style="color:var(--analyst-accent2);font-weight:700">{{ m.show_count }}</span></td>
+                  </tr>
+                  {% endfor %}
+                  {% if not top_movies %}
+                  <tr><td colspan="5" class="text-center text-muted py-4">No data available</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Rated Movies -->
+        <div class="col-md-5">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-medal"></i> Top Rated Movies</div>
+            <div class="analyst-table">
+              <table class="table table-borderless mb-0">
+                <thead><tr>
+                  <th>#</th><th>Title</th><th>Rating</th>
+                </tr></thead>
+                <tbody>
+                  {% for i, m in enumerate(top_rated) %}
+                  <tr>
+                    <td><span class="rank-num">{{ i+1 }}</span></td>
+                    <td style="color:#fff;font-weight:500;font-size:12px">{{ m.title }}</td>
+                    <td>
+                      <span style="color:#f4c430;font-weight:700">
+                        <i class="fas fa-star" style="font-size:10px"></i> {{ "%.1f"|format(m.rating) }}
+                      </span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                  {% if not top_rated %}
+                  <tr><td colspan="3" class="text-center text-muted py-4">No data available</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shows per City Chart -->
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-map"></i> Shows Distribution by City</div>
+            <canvas id="showsCityChart" height="100"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ 5.13 REPORTING & ANALYTICS ═══ -->
+      <div class="section-divider mb-4">
+        <div class="section-divider-label"><i class="fas fa-chart-line me-2"></i>Reporting &amp; Analytics (5.13)</div>
+      </div>
+
+      <!-- Booking & Revenue KPI row -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
+            <div class="stat-num">{{ stats.total_bookings }}</div>
+            <div class="stat-label">Confirmed Bookings</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+            <div class="stat-num">₹{{ "{:,.0f}".format(stats.total_revenue) }}</div>
+            <div class="stat-label">Total Revenue</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-num">{{ stats.total_tickets }}</div>
+            <div class="stat-label">Tickets Sold</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card-analyst">
+            <div class="glow-bg"></div>
+            <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+            <div class="stat-num">{{ stats.cancellation_rate }}%</div>
+            <div class="stat-label">Cancellation Rate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking trend + Revenue by method -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-8">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-chart-line"></i> Bookings &amp; Revenue Trend (Last 30 Days)</div>
+            <canvas id="bookingTrendChart" height="180"></canvas>
+            {% if not bookings_trend %}
+            <p class="text-center text-muted py-3 small">No booking data yet – bookings will appear here once users book tickets.</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-credit-card"></i> Revenue by Payment Method</div>
+            <canvas id="payMethodChart" height="180"></canvas>
+            {% if not revenue_by_method %}
+            <p class="text-center text-muted py-3 small">No payment data yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Top booked movies + Top cities -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-7">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-fire"></i> Top Movies by Bookings</div>
+            <div class="analyst-table">
+              <table class="table table-borderless mb-0">
+                <thead><tr><th>#</th><th>Movie</th><th>Bookings</th><th>Tickets</th><th>Revenue</th></tr></thead>
+                <tbody>
+                  {% for i, m in enumerate(top_booked_movies) %}
+                  <tr>
+                    <td><span class="rank-num">{{ i+1 }}</span></td>
+                    <td style="color:#fff;font-weight:600;font-size:12px">{{ m.movie_title }}</td>
+                    <td><span style="color:var(--analyst-accent2);font-weight:700">{{ m.bookings }}</span></td>
+                    <td>{{ m.tickets }}</td>
+                    <td style="color:#27ae60;font-weight:600">₹{{ "{:,.0f}".format(m.revenue) }}</td>
+                  </tr>
+                  {% endfor %}
+                  {% if not top_booked_movies %}
+                  <tr><td colspan="5" class="text-center text-muted py-4">No bookings yet</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-city"></i> Top Cities by Bookings</div>
+            <canvas id="citiesBookingChart" height="220"></canvas>
+            {% if not top_cities_bookings %}
+            <p class="text-center text-muted py-3 small">No city booking data yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- User signup trend -->
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-user-plus"></i> User Signup Trend (Last 30 Days)</div>
+            <canvas id="signupTrendChart" height="90"></canvas>
+            {% if not signup_trend %}
+            <p class="text-center text-muted py-3 small">No signup data in the last 30 days.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ 5.14 AUDIT & ACTIVITY LOG ═══ -->
+      <div class="section-divider mb-4">
+        <div class="section-divider-label"><i class="fas fa-clipboard-list me-2"></i>Audit &amp; Activity Log (5.14)</div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <!-- Recent Bookings Audit -->
+        <div class="col-12">
+          <div class="chart-card">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="chart-title mb-0"><i class="fas fa-history"></i> Recent Booking Activity</div>
+              <span class="badge" style="background:rgba(124,58,237,.3);color:#a855f7;font-size:11px;padding:5px 10px;border-radius:20px">Last 20 Bookings</span>
+            </div>
+            <div style="overflow-x:auto">
+            <div class="analyst-table">
+              <table class="table table-borderless mb-0" style="min-width:700px">
+                <thead><tr>
+                  <th>Ref</th><th>User</th><th>Movie</th><th>Theatre</th>
+                  <th>Tickets</th><th>Amount</th><th>Method</th><th>Status</th><th>Time</th>
+                </tr></thead>
+                <tbody>
+                  {% for b in recent_bookings_audit %}
+                  <tr>
+                    <td><span style="color:var(--analyst-accent2);font-size:11px;font-family:monospace;font-weight:700">{{ b.booking_ref }}</span></td>
+                    <td style="color:#fff;font-size:12px">{{ b.user_name }}</td>
+                    <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.movie_title }}</td>
+                    <td style="font-size:11px;color:#999;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.theatre_name }}</td>
+                    <td style="text-align:center">{{ b.num_tickets }}</td>
+                    <td style="color:#27ae60;font-weight:600">₹{{ b.total_amount|int }}</td>
+                    <td><span style="font-size:11px;color:#aaa">{{ b.payment_method or '-' }}</span></td>
+                    <td>
+                      {% if b.status == 'Confirmed' %}
+                      <span style="background:rgba(39,174,96,.2);color:#27ae60;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700">{{ b.status }}</span>
+                      {% else %}
+                      <span style="background:rgba(229,9,20,.15);color:#e50914;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700">{{ b.status }}</span>
+                      {% endif %}
+                    </td>
+                    <td style="font-size:11px;color:#666;white-space:nowrap">{{ b.booked_at.strftime('%d %b, %H:%M') if b.booked_at else '-' }}</td>
+                  </tr>
+                  {% endfor %}
+                  {% if not recent_bookings_audit %}
+                  <tr><td colspan="9" class="text-center text-muted py-4">No booking activity yet</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Registration Audit -->
+      <div class="row g-3 mb-5">
+        <div class="col-12">
+          <div class="chart-card">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="chart-title mb-0"><i class="fas fa-user-shield"></i> User Registration Log</div>
+              <span class="badge" style="background:rgba(124,58,237,.3);color:#a855f7;font-size:11px;padding:5px 10px;border-radius:20px">Last 20 Users</span>
+            </div>
+            <div style="overflow-x:auto">
+            <div class="analyst-table">
+              <table class="table table-borderless mb-0" style="min-width:500px">
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Registered At</th></tr></thead>
+                <tbody>
+                  {% for u in audit_logs %}
+                  <tr>
+                    <td style="color:#fff;font-weight:600;font-size:13px">{{ u.name }}</td>
+                    <td style="font-size:12px;color:#999">{{ u.email }}</td>
+                    <td>
+                      {% set role_colors = {'admin':'#e50914','theatre_owner':'#f59e0b','user':'var(--analyst-accent2)','analyst':'#34d399'} %}
+                      <span style="background:rgba(255,255,255,0.06);color:{{ role_colors.get(u.role,'#aaa') }};font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;text-transform:capitalize">{{ u.role }}</span>
+                    </td>
+                    <td>
+                      {% if u.status == 'Active' %}
+                      <span style="background:rgba(39,174,96,.2);color:#27ae60;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700">Active</span>
+                      {% else %}
+                      <span style="background:rgba(229,9,20,.15);color:#e50914;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700">Inactive</span>
+                      {% endif %}
+                    </td>
+                    <td style="font-size:11px;color:#666;white-space:nowrap">{{ u.created_at.strftime('%d %b %Y, %H:%M') if u.created_at else '-' }}</td>
+                  </tr>
+                  {% endfor %}
+                  {% if not audit_logs %}
+                  <tr><td colspan="5" class="text-center text-muted py-4">No user data</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panel-content -->
+  </div><!-- /panel-main -->
+</div><!-- /panel-body -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+// Sidebar toggle
+document.getElementById('sbToggle')?.addEventListener('click', function() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+const PURPLE = 'rgba(124,58,237,';
+const chartDefaults = {
+  plugins: { legend: { labels: { color: '#888', font: { size: 12 } } } },
+  scales: {
+    x: { ticks: { color: '#666' }, grid: { color: 'rgba(255,255,255,.05)' } },
+    y: { ticks: { color: '#666' }, grid: { color: 'rgba(255,255,255,.05)' } }
+  }
+};
+
+// Genre Doughnut
+const genreData = {{ genre_dist | tojson }};
+if (genreData.length) {
+  new Chart(document.getElementById('genreChart'), {
+    type: 'doughnut',
+    data: {
+      labels: genreData.map(g => g[0]),
+      datasets: [{ data: genreData.map(g => g[1]),
+        backgroundColor: ['#7c3aed','#a855f7','#c084fc','#e63946','#ff6b6b','#4da6ff','#34d399','#fbbf24','#f59e0b','#10b981'],
+        borderWidth: 2, borderColor: '#12121f' }]
+    },
+    options: { plugins: { legend: { position: 'right', labels: { color: '#888', font: { size: 11 }, padding: 12, boxWidth: 14 } } }, cutout: '60%' }
+  });
+}
+
+// Language Bar
+const langData = {{ lang_dist | tojson }};
+if (langData.length) {
+  new Chart(document.getElementById('langChart'), {
+    type: 'bar',
+    data: {
+      labels: langData.map(l => l[0]),
+      datasets: [{ label: 'Movies', data: langData.map(l => l[1]),
+        backgroundColor: PURPLE + '0.7)', borderColor: PURPLE + '1)', borderWidth: 1, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } } }
+  });
+}
+
+// City Bar
+const cityData = {{ top_cities | tojson }};
+if (cityData.length) {
+  new Chart(document.getElementById('cityChart'), {
+    type: 'bar',
+    data: {
+      labels: cityData.map(c => c[0]),
+      datasets: [{ label: 'Theatres', data: cityData.map(c => c[1]),
+        backgroundColor: 'rgba(230,57,70,0.7)', borderColor: 'rgba(230,57,70,1)', borderWidth: 1, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } } }
+  });
+}
+
+// Rating by Genre
+const ratingData = {{ rating_by_genre | tojson }};
+if (ratingData.length) {
+  new Chart(document.getElementById('ratingChart'), {
+    type: 'bar',
+    data: {
+      labels: ratingData.map(r => r[0]),
+      datasets: [{ label: 'Avg Rating', data: ratingData.map(r => parseFloat(r[1])),
+        backgroundColor: 'rgba(244,196,48,0.7)', borderColor: 'rgba(244,196,48,1)', borderWidth: 1, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } }, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, max: 10 } } }
+  });
+}
+
+// Shows per City
+const showsCityData = {{ shows_per_city | tojson }};
+if (showsCityData.length) {
+  new Chart(document.getElementById('showsCityChart'), {
+    type: 'bar',
+    data: {
+      labels: showsCityData.map(c => c[0]),
+      datasets: [{ label: 'Shows', data: showsCityData.map(c => c[1]),
+        backgroundColor: 'rgba(52,211,153,0.7)', borderColor: 'rgba(52,211,153,1)', borderWidth: 1, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } } }
+  });
+}
+
+// ─── 5.13: Booking Trend (last 30 days) ───
+const bookingTrendData = {{ bookings_trend | tojson }};
+if (bookingTrendData.length) {
+  new Chart(document.getElementById('bookingTrendChart'), {
+    type: 'line',
+    data: {
+      labels: bookingTrendData.map(r => r[0]),
+      datasets: [
+        {
+          label: 'Bookings',
+          data: bookingTrendData.map(r => r[1]),
+          borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.12)',
+          tension: 0.4, fill: true, pointRadius: 3, yAxisID: 'y'
+        },
+        {
+          label: 'Revenue (₹)',
+          data: bookingTrendData.map(r => parseFloat(r[2])),
+          borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.08)',
+          tension: 0.4, fill: true, pointRadius: 3, yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { ...chartDefaults.scales.x },
+        y: { ...chartDefaults.scales.y, position: 'left', title: { display: true, text: 'Bookings', color: '#a855f7', font: { size: 10 } } },
+        y1: { ...chartDefaults.scales.y, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Revenue ₹', color: '#27ae60', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ─── 5.13: Revenue by Payment Method ───
+const payMethodData = {{ revenue_by_method | tojson }};
+if (payMethodData.length) {
+  new Chart(document.getElementById('payMethodChart'), {
+    type: 'doughnut',
+    data: {
+      labels: payMethodData.map(r => r[0]),
+      datasets: [{
+        data: payMethodData.map(r => parseFloat(r[2])),
+        backgroundColor: ['rgba(124,58,237,0.8)','rgba(229,9,20,0.8)','rgba(39,174,96,0.8)','rgba(245,158,11,0.8)'],
+        borderColor: '#12121f', borderWidth: 3
+      }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#888', font: { size: 11 } } } }, cutout: '65%' }
+  });
+}
+
+// ─── 5.13: Top Cities by Bookings ───
+const citiesBookingData = {{ top_cities_bookings | tojson }};
+if (citiesBookingData.length) {
+  new Chart(document.getElementById('citiesBookingChart'), {
+    type: 'bar',
+    data: {
+      labels: citiesBookingData.map(c => c[0]),
+      datasets: [{ label: 'Bookings', data: citiesBookingData.map(c => c[1]),
+        backgroundColor: 'rgba(124,58,237,0.7)', borderColor: 'rgba(168,85,247,1)', borderWidth: 1, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, indexAxis: 'y', plugins: { legend: { display: false } } }
+  });
+}
+
+// ─── 5.13: User Signup Trend ───
+const signupTrendData = {{ signup_trend | tojson }};
+if (signupTrendData.length) {
+  new Chart(document.getElementById('signupTrendChart'), {
+    type: 'bar',
+    data: {
+      labels: signupTrendData.map(r => r[0]),
+      datasets: [{ label: 'New Users', data: signupTrendData.map(r => r[1]),
+        backgroundColor: 'rgba(245,158,11,0.7)', borderColor: 'rgba(245,158,11,1)', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } } }
+  });
+}
+</script>
+</body>
+</html>

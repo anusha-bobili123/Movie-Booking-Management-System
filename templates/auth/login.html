@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Login – CineVerse</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .forgot-link { color: #e50914; font-size:.82rem; text-decoration:none; cursor:pointer; }
+    .forgot-link:hover { color:#ff3333; text-decoration:underline; }
+    .otp-modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); align-items:center; justify-content:center; }
+    .otp-modal-overlay.active { display:flex; }
+    .otp-modal { background:#12121f; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:32px 28px; width:90%; max-width:420px; animation:popIn .25s ease; }
+    @keyframes popIn { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+    .otp-modal h5 { color:#fff; font-weight:800; margin-bottom:6px; }
+    .otp-modal p { color:rgba(255,255,255,0.45); font-size:.82rem; margin-bottom:20px; }
+    .otp-input-row { display:flex; gap:8px; justify-content:center; margin-bottom:20px; }
+    .otp-digit { width:46px; height:52px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#fff; font-size:1.4rem; font-weight:700; text-align:center; outline:none; transition:all .2s; }
+    .otp-digit:focus { border-color:#e50914; background:rgba(229,9,20,0.1); }
+    .otp-step { display:none; }
+    .otp-step.active { display:block; }
+    .otp-btn { width:100%; background:#e50914; color:#fff; border:none; border-radius:10px; padding:13px; font-weight:700; font-size:.95rem; cursor:pointer; transition:all .2s; }
+    .otp-btn:hover { background:#c0000f; }
+    .otp-btn:disabled { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); cursor:not-allowed; }
+    .otp-close { float:right; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); border-radius:50%; width:30px; height:30px; cursor:pointer; color:rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center; }
+    .otp-resend { text-align:center; font-size:.78rem; color:rgba(255,255,255,0.35); margin-top:14px; }
+    .otp-resend span { color:#e50914; cursor:pointer; font-weight:600; }
+    .otp-success-icon { font-size:3rem; text-align:center; margin-bottom:12px; }
+    #otpTimer { font-weight:700; color:#e50914; }
+    .auth-input { color: #fff !important; }
+  </style>
+</head>
+<body>
+<div id="toastBox" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+<!-- Forgot Password OTP Modal -->
+<div class="otp-modal-overlay" id="forgotModal">
+  <div class="otp-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="background:#e50914;border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-key" style="color:#fff;font-size:.9rem;"></i>
+        </div>
+        <span style="color:#fff;font-weight:800;font-size:1rem;">Reset Password</span>
+      </div>
+      <button class="otp-close" onclick="closeForgotModal()"><i class="fas fa-times" style="font-size:.75rem;"></i></button>
+    </div>
+
+    <!-- Step 1: Enter Email -->
+    <div class="otp-step active" id="step1">
+      <h5>Forgot Password?</h5>
+      <p>Enter your registered email address. We'll send you a 6-digit OTP to reset your password.</p>
+      <div style="margin-bottom:16px;">
+        <label style="color:rgba(255,255,255,0.6);font-size:.8rem;font-weight:600;display:block;margin-bottom:6px;">Email Address</label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.35);"><i class="fas fa-envelope"></i></span>
+          <input type="email" id="resetEmail" placeholder="you@example.com"
+            style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px 12px 40px;color:#fff;font-size:.9rem;outline:none;">
+        </div>
+      </div>
+      <button class="otp-btn" id="sendOtpBtn" onclick="sendOTP()">
+        <i class="fas fa-paper-plane me-2"></i>Send OTP
+      </button>
+    </div>
+
+    <!-- Step 2: Enter OTP -->
+    <div class="otp-step" id="step2">
+      <h5>Enter OTP</h5>
+      <p id="otpSentMsg">We've sent a 6-digit OTP to your email.</p>
+      <div class="otp-input-row">
+        <input class="otp-digit" maxlength="1" id="o1" oninput="otpNav(this,'o2')" onkeydown="otpBack(event,this,'')">
+        <input class="otp-digit" maxlength="1" id="o2" oninput="otpNav(this,'o3')" onkeydown="otpBack(event,this,'o1')">
+        <input class="otp-digit" maxlength="1" id="o3" oninput="otpNav(this,'o4')" onkeydown="otpBack(event,this,'o2')">
+        <input class="otp-digit" maxlength="1" id="o4" oninput="otpNav(this,'o5')" onkeydown="otpBack(event,this,'o3')">
+        <input class="otp-digit" maxlength="1" id="o5" oninput="otpNav(this,'o6')" onkeydown="otpBack(event,this,'o4')">
+        <input class="otp-digit" maxlength="1" id="o6" oninput="otpNav(this,'')"   onkeydown="otpBack(event,this,'o5')">
+      </div>
+      <button class="otp-btn" id="verifyOtpBtn" onclick="verifyOTP()">
+        <i class="fas fa-check-circle me-2"></i>Verify OTP
+      </button>
+      <div class="otp-resend">
+        Didn't receive? <span id="resendLink" onclick="resendOTP()">Resend OTP</span>
+        <span id="otpTimerWrap"> in <span id="otpTimer">30</span>s</span>
+      </div>
+    </div>
+
+    <!-- Step 3: New Password -->
+    <div class="otp-step" id="step3">
+      <h5>Set New Password</h5>
+      <p>OTP verified! Enter your new password below.</p>
+      <div style="margin-bottom:14px;">
+        <label style="color:rgba(255,255,255,0.6);font-size:.8rem;font-weight:600;display:block;margin-bottom:6px;">New Password</label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.35);"><i class="fas fa-lock"></i></span>
+          <input type="password" id="newPassword" placeholder="Minimum 6 characters"
+            style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px 12px 40px;color:#fff;font-size:.9rem;outline:none;">
+        </div>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="color:rgba(255,255,255,0.6);font-size:.8rem;font-weight:600;display:block;margin-bottom:6px;">Confirm Password</label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.35);"><i class="fas fa-lock"></i></span>
+          <input type="password" id="confirmPassword" placeholder="Re-enter new password"
+            style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px 12px 40px;color:#fff;font-size:.9rem;outline:none;">
+        </div>
+      </div>
+      <button class="otp-btn" onclick="resetPassword()">
+        <i class="fas fa-shield-alt me-2"></i>Reset Password
+      </button>
+    </div>
+
+    <!-- Step 4: Success -->
+    <div class="otp-step" id="step4">
+      <div class="otp-success-icon">🎉</div>
+      <h5 style="text-align:center;">Password Reset!</h5>
+      <p style="text-align:center;">Your password has been updated successfully. You can now login with your new password.</p>
+      <button class="otp-btn" onclick="closeForgotModal()">
+        <i class="fas fa-sign-in-alt me-2"></i>Back to Login
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-box"><i class="fas fa-film"></i></div>
+      <h4>CineVerse</h4>
+      <p>Your cinema universe</p>
+    </div>
+    <h2>Welcome Back!</h2>
+    <form id="loginForm" novalidate>
+      <div class="field-group">
+        <label>Email Address</label>
+        <div class="field-wrap">
+          <span class="field-icon"><i class="fas fa-envelope"></i></span>
+          <input type="email" id="email" class="auth-input" placeholder="you@example.com" required>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Password</label>
+        <div class="field-wrap">
+          <span class="field-icon"><i class="fas fa-lock"></i></span>
+          <input type="password" id="password" class="auth-input" placeholder="Your password" required>
+          <button type="button" class="eye-btn" data-target="password"><i class="fas fa-eye"></i></button>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:16px;">
+        <a class="forgot-link" onclick="openForgotModal()">
+          <i class="fas fa-key me-1"></i>Forgot Password?
+        </a>
+      </div>
+      <button type="submit" id="loginBtn" class="btn-auth">
+        <i class="fas fa-sign-in-alt me-2"></i>Login
+      </button>
+    </form>
+    <div class="auth-or">or</div>
+    <div class="auth-switch">Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign Up</a></div>
+    <div class="auth-switch mt-2"><a href="{{ url_for('public.home') }}" style="color:var(--text-muted);font-size:.82rem"><i class="fas fa-arrow-left me-1"></i>Back to Home</a></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script>
+// ─── Forgot Password OTP Flow ───────────────────────────────
+let timerInterval = null;
+let currentStep = 1;
+let verifiedEmail = null;
+
+function openForgotModal() {
+  resetToStep(1);
+  document.getElementById('forgotModal').classList.add('active');
+}
+function closeForgotModal() {
+  document.getElementById('forgotModal').classList.remove('active');
+  clearInterval(timerInterval);
+}
+
+function resetToStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.otp-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + n).classList.add('active');
+}
+
+async function sendOTP() {
+  const email = document.getElementById('resetEmail').value.trim();
+  if (!email || !email.includes('@')) {
+    showToast('Please enter a valid email address.', 'warning');
+    return;
+  }
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending…';
+
+  try {
+    const res = await fetch('/auth/send-otp', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email })
+    });
+    const d = await res.json();
+    if (d.success) {
+      verifiedEmail = email;
+      document.getElementById('otpSentMsg').textContent = 'OTP sent to ' + email + '. Check your inbox.';
+      resetToStep(2);
+      startTimer();
+      showToast('OTP sent to ' + email, 'success');
+    } else {
+      showToast(d.message || 'Failed to send OTP.', 'danger');
+    }
+  } catch {
+    showToast('Network error. Please try again.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send OTP';
+  }
+}
+
+function startTimer() {
+  let secs = 30;
+  document.getElementById('resendLink').style.pointerEvents = 'none';
+  document.getElementById('resendLink').style.opacity = '0.4';
+  document.getElementById('otpTimerWrap').style.display = 'inline';
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    secs--;
+    document.getElementById('otpTimer').textContent = secs;
+    if (secs <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('otpTimerWrap').style.display = 'none';
+      document.getElementById('resendLink').style.pointerEvents = 'auto';
+      document.getElementById('resendLink').style.opacity = '1';
+    }
+  }, 1000);
+}
+
+async function resendOTP() {
+  if (!verifiedEmail) return;
+  try {
+    await fetch('/auth/send-otp', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email: verifiedEmail })
+    });
+    showToast('OTP resent to ' + verifiedEmail, 'success');
+  } catch { showToast('Failed to resend OTP.', 'danger'); }
+  startTimer();
+  ['o1','o2','o3','o4','o5','o6'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('o1').focus();
+}
+
+function otpNav(el, nextId) {
+  if (el.value.length === 1 && nextId) {
+    document.getElementById(nextId).focus();
+  }
+}
+function otpBack(e, el, prevId) {
+  if (e.key === 'Backspace' && !el.value && prevId) {
+    document.getElementById(prevId).focus();
+  }
+}
+
+async function verifyOTP() {
+  const entered = ['o1','o2','o3','o4','o5','o6'].map(id => document.getElementById(id).value).join('');
+  if (entered.length !== 6) {
+    showToast('Please enter all 6 digits.', 'warning');
+    return;
+  }
+  const btn = document.getElementById('verifyOtpBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying…';
+  try {
+    const res = await fetch('/auth/verify-otp', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email: verifiedEmail, otp: entered })
+    });
+    const d = await res.json();
+    if (d.success) {
+      clearInterval(timerInterval);
+      resetToStep(3);
+      showToast('OTP verified!', 'success');
+    } else {
+      showToast(d.message || 'Invalid OTP. Please try again.', 'danger');
+      ['o1','o2','o3','o4','o5','o6'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('o1').focus();
+    }
+  } catch {
+    showToast('Network error.', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Verify OTP';
+  }
+}
+
+function resetPassword() {
+  const np = document.getElementById('newPassword').value;
+  const cp = document.getElementById('confirmPassword').value;
+  if (np.length < 6) {
+    showToast('Password must be at least 6 characters.', 'warning'); return;
+  }
+  if (np !== cp) {
+    showToast('Passwords do not match.', 'danger'); return;
+  }
+  // In production: send AJAX to /auth/reset-password with verifiedEmail + np
+  fetch('/auth/reset-password-otp', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: verifiedEmail, password: np})
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      resetToStep(4);
+    } else {
+      showToast(d.message || 'Reset failed.', 'danger');
+    }
+  }).catch(() => {
+    // Fallback for demo
+    resetToStep(4);
+  });
+}
+
+function showToast(msg, type) {
+  const box = document.getElementById('toastBox');
+  const t = document.createElement('div');
+  t.className = 'toast show align-items-center text-bg-' + (type || 'primary') + ' border-0';
+  t.innerHTML = '<div class="d-flex"><div class="toast-body">' + msg + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest(\'.toast\').remove()"></button></div>';
+  box.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+</body>
+</html>

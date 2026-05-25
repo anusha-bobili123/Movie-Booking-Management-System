@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}{{ movie.title }} – CineVerse{% endblock %}
+{% block content %}
+
+{% set cinematic_posters = [
+  'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1600&q=100',
+  'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1600&q=100',
+  'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1600&q=100',
+  'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1600&q=100',
+  'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=1600&q=100',
+  'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=1600&q=100',
+  'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=1600&q=100',
+  'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1600&q=100',
+  'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=1600&q=100',
+  'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=1600&q=100'
+] %}
+{% set _mid_str = movie.movie_id | string | replace('MOV','') | replace('M','') | replace('m','') %}
+{% if _mid_str | int(-1) >= 0 %}
+  {% set movie_img = cinematic_posters[(_mid_str | int) % (cinematic_posters|length)] %}
+{% else %}
+  {% set movie_img = cinematic_posters[0] %}
+{% endif %}
+
+<!-- ── HERO SECTION ── -->
+<div style="position:relative;overflow:hidden;">
+  <div style="position:absolute;inset:0;z-index:0;">
+    <img src="{{ movie_img }}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;filter:brightness(0.18) saturate(1.5);" loading="eager">
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,8,16,0.2) 0%,rgba(8,8,16,0.85) 70%,rgba(8,8,16,1) 100%);"></div>
+  </div>
+
+  <div class="container" style="position:relative;z-index:2;padding:60px 20px 50px;">
+    <div class="d-flex gap-4 flex-wrap align-items-end">
+      <!-- Poster -->
+      <div style="flex-shrink:0;width:160px;height:235px;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.9);border:2px solid rgba(255,255,255,0.13);">
+        <img src="{{ movie_img }}" alt="{{ movie.title }}" style="width:100%;height:100%;object-fit:cover;object-position:center top;" loading="eager">
+      </div>
+      <!-- Info -->
+      <div class="flex-grow-1" style="min-width:0;">
+        {% if movie.rating %}
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="color:#ffd700;font-size:1.1rem;"><i class="fas fa-star"></i></span>
+          <span style="color:#ffd700;font-size:1.1rem;font-weight:700;">{{ "%.1f"|format(movie.rating) }}/10</span>
+          <span style="color:rgba(255,255,255,0.35);font-size:.8rem;">&nbsp;Rate now &rsaquo;</span>
+        </div>
+        {% endif %}
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:3px;color:#fff;line-height:1.05;margin-bottom:14px;">{{ movie.title }}</h1>
+        <div style="color:rgba(255,255,255,0.55);font-size:.85rem;margin-bottom:14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+          {% if movie.duration %}<span>{{ (movie.duration // 60)|int }}h {{ movie.duration % 60 }}m</span><span style="color:rgba(255,255,255,0.2);">•</span>{% endif %}
+          {% if movie.genre %}<span>{{ movie.genre }}</span><span style="color:rgba(255,255,255,0.2);">•</span>{% endif %}
+          {% if movie.release_date %}<span>{{ movie.release_date }}</span>{% endif %}
+        </div>
+        <!-- Format pills -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;">
+          {% if movie.language %}
+          <span style="border:1px solid rgba(255,255,255,0.25);border-radius:4px;padding:3px 12px;font-size:.78rem;color:rgba(255,255,255,0.75);">{{ movie.language }}</span>
+          {% endif %}
+          <span style="border:1px solid rgba(255,255,255,0.25);border-radius:4px;padding:3px 12px;font-size:.78rem;color:rgba(255,255,255,0.75);">2D</span>
+          <span style="border:1px solid rgba(255,255,255,0.25);border-radius:4px;padding:3px 12px;font-size:.78rem;color:rgba(255,255,255,0.75);">4DX</span>
+          <span style="border:1px solid rgba(255,255,255,0.25);border-radius:4px;padding:3px 12px;font-size:.78rem;color:rgba(255,255,255,0.75);">IMAX 2D</span>
+        </div>
+
+        <!-- ── TOP BOOK TICKETS BUTTON → goes to date/time selection ── -->
+        {% if session.get('role') == 'user' %}
+        <a href="{{ url_for('public.movie_booking', movie_id=movie.movie_id) }}"
+           style="display:inline-flex;align-items:center;gap:10px;background:#e50914;color:#fff;padding:13px 36px;border-radius:6px;font-weight:700;font-size:1rem;text-decoration:none;box-shadow:0 6px 24px rgba(229,9,20,0.5);letter-spacing:.5px;transition:all .2s;"
+           onmouseenter="this.style.background='#c0000f'" onmouseleave="this.style.background='#e50914'">
+          <i class="fas fa-ticket-alt"></i> Book Tickets
+        </a>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}"
+           style="display:inline-flex;align-items:center;gap:10px;background:#e50914;color:#fff;padding:13px 36px;border-radius:6px;font-weight:700;font-size:1rem;text-decoration:none;box-shadow:0 6px 24px rgba(229,9,20,0.5);">
+          <i class="fas fa-sign-in-alt"></i> Login to Book
+        </a>
+        {% endif %}
+
+        {% if movie.description %}
+        <p style="color:rgba(255,255,255,0.5);max-width:600px;font-size:.88rem;line-height:1.75;margin-top:20px;margin-bottom:0;">{{ movie.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TWO-COLUMN: Available Shows + Sidebar ── -->
+<div style="background:#08080f;min-height:60vh;">
+  <div class="container py-4">
+    <div class="row g-4">
+
+      <!-- LEFT: Available Shows -->
+      <div class="col-lg-8">
+        <h5 style="color:#fff;font-weight:700;font-size:1rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-calendar-alt" style="color:#e50914;"></i> Available Shows
+        </h5>
+
+        {% if shows %}
+          {% set ns_city = namespace(cities=[]) %}
+          {% for s in shows %}
+            {% if s.city and s.city not in ns_city.cities %}{% set _ = ns_city.cities.append(s.city) %}{% endif %}
+          {% endfor %}
+
+          {% for city in ns_city.cities %}
+          <div style="margin-bottom:24px;">
+            <!-- City header -->
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+              <i class="fas fa-map-marker-alt" style="color:#e50914;font-size:.8rem;"></i>
+              <span style="color:#e50914;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;">{{ city }}</span>
+            </div>
+
+            {% set ns_th = namespace(seen=[]) %}
+            {% for s in shows %}
+              {% if s.city == city and s.theatre_name not in ns_th.seen %}
+                {% set _ = ns_th.seen.append(s.theatre_name) %}
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px 20px;margin-bottom:10px;">
+                  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                    <div>
+                      <div style="color:#fff;font-weight:700;font-size:.95rem;">{{ s.theatre_name }}</div>
+                      {% if s.location %}<div style="color:rgba(255,255,255,0.38);font-size:.75rem;margin-top:2px;">{{ s.location }}</div>{% endif %}
+                    </div>
+                    <!-- Right side: timing pills + seats + BOOK button -->
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                      <!-- Timing pills (decorative preview) -->
+                      {% for s2 in shows %}
+                        {% if s2.theatre_name == s.theatre_name and s2.city == city %}
+                          <span style="display:inline-flex;align-items:center;border:1.5px solid {% if s2.available_seats > 30 %}rgba(39,174,96,0.6){% elif s2.available_seats > 10 %}rgba(243,156,18,0.6){% else %}rgba(229,9,20,0.6){% endif %};border-radius:5px;padding:6px 14px;font-size:.88rem;font-weight:600;color:#fff;background:transparent;">
+                            {{ s2.start_time }}
+                          </span>
+                        {% endif %}
+                      {% endfor %}
+
+                      <!-- Seats & price (first show of this theatre) -->
+                      {% set ns_first = namespace(shown=false) %}
+                      {% for s3 in shows %}
+                        {% if s3.theatre_name == s.theatre_name and s3.city == city and not ns_first.shown %}
+                          {% set ns_first.shown = true %}
+                          <span style="color:{% if s3.available_seats > 30 %}#4ade80{% elif s3.available_seats > 10 %}#fbbf24{% else %}#f87171{% endif %};font-size:.75rem;white-space:nowrap;">
+                            <i class="fas fa-circle" style="font-size:.45rem;vertical-align:middle;"></i> {{ s3.available_seats }} seats
+                          </span>
+                          <span style="color:rgba(255,255,255,0.5);font-size:.8rem;font-weight:600;">&#8377;{{ s3.price_per_ticket|int }}</span>
+
+                          <!-- ── BOOK BUTTON → same movie_booking page (date + time selection) ── -->
+                          {% if session.get('role') == 'user' %}
+                          <a href="{{ url_for('public.movie_booking', movie_id=movie.movie_id) }}"
+                             style="background:#e50914;color:#fff;padding:7px 18px;border-radius:5px;font-size:.82rem;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .2s;display:inline-flex;align-items:center;gap:6px;"
+                             onmouseenter="this.style.background='#c0000f'" onmouseleave="this.style.background='#e50914'">
+                            <i class="fas fa-ticket-alt"></i> Book
+                          </a>
+                          {% else %}
+                          <a href="{{ url_for('auth.login') }}"
+                             style="background:#e50914;color:#fff;padding:7px 18px;border-radius:5px;font-size:.82rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                            <i class="fas fa-sign-in-alt"></i> Book
+                          </a>
+                          {% endif %}
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% endfor %}
+
+        {% else %}
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:40px;text-align:center;">
+            <i class="fas fa-film" style="font-size:2rem;color:rgba(229,9,20,0.4);margin-bottom:12px;display:block;"></i>
+            <p style="color:rgba(255,255,255,0.4);margin-bottom:18px;">Shows will be announced soon.</p>
+            {% if session.get('role') == 'user' %}
+            <a href="{{ url_for('public.movie_booking', movie_id=movie.movie_id) }}"
+               style="display:inline-flex;align-items:center;gap:8px;background:#e50914;color:#fff;padding:10px 24px;border-radius:6px;font-weight:700;text-decoration:none;">
+              <i class="fas fa-ticket-alt"></i> View All Shows
+            </a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div><!-- /col -->
+
+      <!-- RIGHT: Movie Info sidebar -->
+      <div class="col-lg-4">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:24px;position:sticky;top:80px;">
+          <h6 style="color:rgba(255,255,255,0.9);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-info-circle" style="color:#e50914;"></i> Movie Info
+          </h6>
+          <table style="width:100%;border-collapse:collapse;">
+            {% if movie.genre %}
+            <tr>
+              <td style="color:rgba(255,255,255,0.4);font-size:.82rem;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">Genre</td>
+              <td style="color:#fff;font-size:.88rem;font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">{{ movie.genre }}</td>
+            </tr>
+            {% endif %}
+            {% if movie.language %}
+            <tr>
+              <td style="color:rgba(255,255,255,0.4);font-size:.82rem;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">Language</td>
+              <td style="color:#fff;font-size:.88rem;font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">{{ movie.language }}</td>
+            </tr>
+            {% endif %}
+            {% if movie.duration %}
+            <tr>
+              <td style="color:rgba(255,255,255,0.4);font-size:.82rem;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">Duration</td>
+              <td style="color:#fff;font-size:.88rem;font-weight:600;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">{{ (movie.duration // 60)|int }}h {{ movie.duration % 60 }}m</td>
+            </tr>
+            {% endif %}
+            {% if movie.rating %}
+            <tr>
+              <td style="color:rgba(255,255,255,0.4);font-size:.82rem;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">Rating</td>
+              <td style="color:#ffd700;font-size:.88rem;font-weight:700;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><i class="fas fa-star" style="font-size:.75rem;"></i> {{ "%.1f"|format(movie.rating) }}/10</td>
+            </tr>
+            {% endif %}
+            {% if movie.release_date %}
+            <tr>
+              <td style="color:rgba(255,255,255,0.4);font-size:.82rem;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">Released</td>
+              <td style="color:#fff;font-size:.82rem;text-align:right;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">{{ movie.release_date }}</td>
+            </tr>
+            {% endif %}
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /row -->
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Smart time filter for show time pills on movie detail page.
+   Dims/strikes past shows and highlights nearly-starting ones. */
+(function filterDetailTimePills(){
+  function timeToMinutes(t){
+    if(!t) return 9999;
+    t = t.trim();
+    const ampm = /([ap]m)/i.exec(t);
+    const nums  = t.replace(/[apm]/gi,'').trim().split(':');
+    let h = parseInt(nums[0]||0);
+    let m = parseInt(nums[1]||0);
+    if(ampm){ const ap=ampm[1].toLowerCase(); if(ap==='pm'&&h!==12)h+=12; if(ap==='am'&&h===12)h=0; }
+    return h*60+m;
+  }
+  const nowMins = new Date().getHours()*60 + new Date().getMinutes();
+
+  /* Target every inline time span in theatre show rows */
+  document.querySelectorAll('span').forEach(function(el){
+    const txt = el.textContent.trim();
+    if(!(/^\d{1,2}:\d{2}/.test(txt) || /\d{1,2}:\d{2}\s*[AP]M/i.test(txt))) return;
+    const minsLeft = timeToMinutes(txt) - nowMins;
+    if(minsLeft < 0){
+      el.style.opacity='0.28'; el.style.textDecoration='line-through';
+      el.style.pointerEvents='none'; el.title='Show already started';
+    } else if(minsLeft < 2){
+      el.style.color='#f59e0b'; el.title='Starting soon – '+minsLeft+' min left';
+    }
+  });
+})();
+</script>
+{% endblock %}

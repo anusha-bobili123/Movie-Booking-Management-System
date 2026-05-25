@@ -1,0 +1,192 @@
+{% extends "theatre_owner/base_owner.html" %}
+{% block title %}My Theatres – CineVerse{% endblock %}
+{% block page_title %}My Theatres{% endblock %}
+{% block content %}
+
+<div class="ph" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h4>My Theatres</h4>
+    <p>{{ theatres|length }} theatre{% if theatres|length != 1 %}s{% endif %} registered under your account</p>
+  </div>
+  <button onclick="openRegisterModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#e50914,#ff6b35);color:#fff;border:none;padding:10px 22px;border-radius:50px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 18px rgba(229,9,20,0.35);transition:all .2s;">
+    <i class="fas fa-plus-circle"></i> Add New Theatre
+  </button>
+</div>
+
+{% if theatres %}
+<div class="row g-3">
+  {% for t in theatres %}
+  <div class="col-md-6 col-lg-4">
+    <div class="pcard h-100">
+      <div class="pcard-body">
+        <div class="d-flex align-items-start gap-3 mb-3">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;flex-shrink:0;box-shadow:0 4px 16px rgba(99,102,241,0.4);">
+            <i class="fas fa-building"></i>
+          </div>
+          <div class="flex-grow-1">
+            <div class="fw-bold fs-6 mb-1">{{ t.name }}</div>
+            <div class="text-muted small"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ t.city }}{% if t.state %}, {{ t.state }}{% endif %}</div>
+            {% if t.location %}<div class="text-muted" style="font-size:.74rem;margin-top:2px">{{ t.location }}</div>{% endif %}
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <div class="text-center p-2 rounded" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2)">
+              <div class="fw-bold fs-5" style="color:#818cf8">{{ t.screen_count }}</div>
+              <div class="small text-muted">Screens</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-2 rounded" style="background:rgba(229,9,20,.08);border:1px solid rgba(229,9,20,.18)">
+              <div class="fw-bold fs-5 text-danger">{{ t.show_count }}</div>
+              <div class="small text-muted">Shows</div>
+            </div>
+          </div>
+        </div>
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('theatre_owner.theatre_detail', theatre_id=t.theater_id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-eye me-1"></i>View Details &amp; Shows
+          </a>
+          <a href="{{ url_for('theatre_owner.my_shows') }}" class="btn btn-danger btn-sm">
+            <i class="fas fa-plus me-1"></i>Add Show for This Theatre
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fas fa-building" style="font-size:3rem;color:rgba(255,255,255,0.15);margin-bottom:16px;display:block;"></i>
+  <h5>No Theatres Yet</h5>
+  <p>You haven't registered any theatres yet.</p>
+  <button onclick="openRegisterModal()" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#e50914,#ff6b35);color:#fff;border:none;padding:11px 26px;border-radius:50px;font-weight:700;cursor:pointer;">
+    <i class="fas fa-plus-circle"></i> Register Your First Theatre
+  </button>
+</div>
+{% endif %}
+
+<!-- REGISTER THEATRE MODAL -->
+<div id="registerModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+  <div style="background:#12121f;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;width:90%;max-width:520px;box-shadow:0 24px 80px rgba(0,0,0,0.7);position:relative;animation:popIn .25s ease;">
+    <button onclick="closeRegisterModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:32px;height:32px;color:#ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;">&times;</button>
+    <h5 style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:#fff;margin-bottom:6px;">Register New Theatre</h5>
+    <p style="color:rgba(255,255,255,0.4);font-size:.83rem;margin-bottom:24px;">Fill in your theatre details. Screens will be auto-created.</p>
+
+    <div id="regMsg" style="display:none;padding:10px 16px;border-radius:10px;margin-bottom:16px;font-size:.85rem;font-weight:600;"></div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="color:rgba(255,255,255,0.55);font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block;">Theatre Name *</label>
+        <input id="reg_name" type="text" placeholder="e.g. PVR Grand Cinema" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:11px 14px;color:#fff;font-size:.9rem;outline:none;">
+      </div>
+      <div>
+          <label style="color:rgba(255,255,255,0.55);font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block;">State *</label>
+          <select id="reg_state" onchange="loadCitiesForReg()" style="width:100%;background:rgba(20,20,40,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:.9rem;outline:none;cursor:pointer;">
+            <option value="">Select State</option>
+          </select>
+        </div>
+        <div>
+          <label style="color:rgba(255,255,255,0.55);font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block;">City *</label>
+          <select id="reg_city" style="width:100%;background:rgba(20,20,40,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:.9rem;outline:none;cursor:pointer;">
+            <option value="">Select State first</option>
+          </select>
+        </div>
+      <div>
+        <label style="color:rgba(255,255,255,0.55);font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block;">Address / Location *</label>
+        <input id="reg_location" type="text" placeholder="e.g. Inorbit Mall, Madhapur" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:11px 14px;color:#fff;font-size:.9rem;outline:none;">
+      </div>
+      <div>
+        <label style="color:rgba(255,255,255,0.55);font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block;">Number of Screens</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input id="reg_screens" type="range" min="1" max="10" value="3" oninput="document.getElementById('screenVal').textContent=this.value" style="flex:1;accent-color:#e50914;">
+          <span id="screenVal" style="color:#e50914;font-weight:700;font-size:1.1rem;min-width:24px;">3</span>
+          <span style="color:rgba(255,255,255,0.4);font-size:.8rem;">screens</span>
+        </div>
+        <p style="color:rgba(255,255,255,0.3);font-size:.74rem;margin-top:4px;margin-bottom:0;">Each screen will have 120 seats by default.</p>
+      </div>
+    </div>
+
+    <button onclick="submitRegisterTheatre()" id="regSubmitBtn" style="width:100%;margin-top:24px;background:linear-gradient(135deg,#e50914,#ff6b35);color:#fff;border:none;border-radius:12px;padding:14px;font-weight:700;font-size:1rem;cursor:pointer;box-shadow:0 6px 20px rgba(229,9,20,0.4);transition:all .2s;">
+      <i class="fas fa-building me-2"></i>Register Theatre
+    </button>
+  </div>
+</div>
+
+<style>
+@keyframes popIn { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+#registerModal { display:none; }
+#registerModal.open { display:flex !important; }
+</style>
+
+<script>
+// Load states on page load
+window.addEventListener('DOMContentLoaded', async function(){
+  try {
+    const res = await fetch('{{ url_for("theatre_owner.api_states") }}');
+    const data = await res.json();
+    const sel = document.getElementById('reg_state');
+    data.states.forEach(s => {
+      const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+    });
+  } catch(e){ console.error('States load error', e); }
+});
+
+async function loadCitiesForReg(){
+  const state = document.getElementById('reg_state').value;
+  const cityEl = document.getElementById('reg_city');
+  cityEl.innerHTML = '<option value="">Loading...</option>';
+  if(!state){ cityEl.innerHTML = '<option value="">Select State first</option>'; return; }
+  try {
+    const res = await fetch('/theatre-owner/api/cities/' + encodeURIComponent(state));
+    const data = await res.json();
+    cityEl.innerHTML = '<option value="">Select City</option>';
+    data.cities.forEach(c => {
+      const o = document.createElement('option'); o.value = c; o.textContent = c; cityEl.appendChild(o);
+    });
+  } catch(e){ cityEl.innerHTML = '<option value="">Error loading cities</option>'; }
+}
+
+function openRegisterModal(){ document.getElementById('registerModal').classList.add('open'); }
+function closeRegisterModal(){ document.getElementById('registerModal').classList.remove('open'); document.getElementById('regMsg').style.display='none'; }
+document.getElementById('registerModal').addEventListener('click', function(e){ if(e.target===this) closeRegisterModal(); });
+
+async function submitRegisterTheatre(){
+  const btn = document.getElementById('regSubmitBtn');
+  const msg = document.getElementById('regMsg');
+  const name = document.getElementById('reg_name').value.trim();
+  const city = document.getElementById('reg_city').value;
+  const state = document.getElementById('reg_state').value;
+  const location = document.getElementById('reg_location').value.trim();
+  const screens = document.getElementById('reg_screens').value;
+
+  if(!name||!city||!state||!location){
+    msg.style.display='block';msg.style.background='rgba(229,9,20,0.15)';msg.style.border='1px solid rgba(229,9,20,0.4)';msg.style.color='#ff6b6b';
+    msg.textContent='Please fill all required fields.';return;
+  }
+  btn.disabled=true;btn.textContent='Registering…';
+  try{
+    const res = await fetch('{{ url_for("theatre_owner.register_theatre") }}',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,city,state,location,screens:parseInt(screens)})
+    });
+    const data = await res.json();
+    msg.style.display='block';
+    if(data.success){
+      msg.style.background='rgba(39,174,96,0.15)';msg.style.border='1px solid rgba(39,174,96,0.4)';msg.style.color='#4ade80';
+      msg.textContent=data.message;
+      btn.textContent='✓ Registered!';
+      setTimeout(()=>location.reload(),1500);
+    } else {
+      msg.style.background='rgba(229,9,20,0.15)';msg.style.border='1px solid rgba(229,9,20,0.4)';msg.style.color='#ff6b6b';
+      msg.textContent=data.message;
+      btn.disabled=false;btn.textContent='Register Theatre';
+    }
+  } catch(e){
+    msg.textContent='Network error. Please try again.';
+    btn.disabled=false;btn.textContent='Register Theatre';
+  }
+}
+</script>
+{% endblock %}

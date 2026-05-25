@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block title %}Booking Confirmed – CineVerse{% endblock %}
+{% block content %}
+
+<style>
+.conf-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:30px 16px;background:radial-gradient(ellipse at 50% 0%,rgba(229,9,20,0.08) 0%,rgba(8,8,16,1) 60%);}
+.conf-card{background:rgba(16,16,28,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:20px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.7);}
+.conf-top{background:linear-gradient(135deg,#1a0428,#0d0d20);padding:30px 28px 24px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);}
+.conf-tick{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#27ae60,#2ecc71);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 28px rgba(39,174,96,0.4);}
+.conf-top h3{color:#fff;font-weight:800;font-size:1.35rem;margin-bottom:5px;}
+.conf-top p{color:rgba(255,255,255,0.5);font-size:.85rem;margin:0;}
+.conf-body{padding:22px 26px 28px;}
+.ref-box{background:rgba(229,9,20,0.08);border:2px dashed rgba(229,9,20,0.4);border-radius:10px;padding:14px 20px;text-align:center;margin-bottom:20px;}
+.ref-lbl{font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:4px;}
+.ref-code{font-size:1.5rem;font-weight:900;color:#e50914;letter-spacing:3px;}
+.det-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.det-row:last-child{border-bottom:none;}
+.det-lbl{font-size:.78rem;color:rgba(255,255,255,0.42);display:flex;align-items:center;gap:6px;}
+.det-lbl i{color:rgba(229,9,20,0.7);font-size:.7rem;}
+.det-val{font-size:.82rem;font-weight:600;color:#fff;text-align:right;max-width:60%;}
+.total-val{font-size:1.1rem;color:#e50914;font-weight:800;}
+.action-btns{display:flex;flex-direction:column;gap:10px;margin-top:22px;}
+.btn-pdf{background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;border:none;border-radius:10px;padding:14px;font-weight:700;font-size:.92rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(39,174,96,0.3);}
+.btn-pdf:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(39,174,96,0.4);}
+.btn-pdf:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.btn-red{background:#e50914;color:#fff;border:none;border-radius:10px;padding:13px;font-weight:700;font-size:.9rem;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;}
+.btn-red:hover{background:#c0000f;color:#fff;}
+.btn-outline{background:transparent;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:12px;font-size:.88rem;font-weight:500;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;}
+.btn-outline:hover{border-color:rgba(255,255,255,0.28);color:#fff;}
+</style>
+
+<div class="conf-wrap">
+  <div class="conf-card">
+    <div class="conf-top">
+      <div class="conf-tick"><i class="fas fa-check" style="color:#fff;font-size:1.6rem;"></i></div>
+      <h3>Booking Confirmed!</h3>
+      <p>Your tickets are booked successfully.</p>
+    </div>
+    <div class="conf-body">
+      <div class="ref-box">
+        <div class="ref-lbl">Booking Reference</div>
+        <div class="ref-code">{{ booking.booking_ref }}</div>
+      </div>
+
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-film"></i>Movie</span><span class="det-val">{{ booking.movie_title }}</span></div>
+      {% if booking.genre %}<div class="det-row"><span class="det-lbl"><i class="fas fa-tags"></i>Genre</span><span class="det-val">{{ booking.genre }}</span></div>{% endif %}
+      {% if booking.language %}<div class="det-row"><span class="det-lbl"><i class="fas fa-language"></i>Language</span><span class="det-val">{{ booking.language }}</span></div>{% endif %}
+      {% if booking.duration %}<div class="det-row"><span class="det-lbl"><i class="fas fa-hourglass-half"></i>Duration</span><span class="det-val">{{ (booking.duration // 60)|int }}h {{ booking.duration % 60 }}m</span></div>{% endif %}
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-building"></i>Theatre</span><span class="det-val">{{ booking.theatre_name }}</span></div>
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-map-marker-alt"></i>City</span><span class="det-val">{{ booking.theatre_city }}</span></div>
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-calendar"></i>Date</span><span class="det-val">{{ booking.show_date }}</span></div>
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-clock"></i>Time</span><span class="det-val">{{ booking.show_time }}</span></div>
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-ticket-alt"></i>Tickets</span><span class="det-val">{{ booking.num_tickets }}</span></div>
+      {% if booking.seat_numbers %}
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-chair"></i>Seats</span><span class="det-val">{{ booking.seat_numbers.split('|')[0].strip() }}</span></div>
+      {% endif %}
+      <div class="det-row"><span class="det-lbl"><i class="fas fa-credit-card"></i>Payment</span><span class="det-val">{{ booking.payment_method }}</span></div>
+      <div class="det-row"><span class="det-lbl" style="font-weight:700;"><i class="fas fa-rupee-sign"></i>Total Paid</span><span class="det-val total-val">₹{{ booking.total_amount|int }}</span></div>
+
+      <div class="action-btns">
+        <button class="btn-pdf" id="pdfBtn" onclick="downloadTicketPDF()">
+          <i class="fas fa-download"></i> Download Ticket PDF
+        </button>
+        <a href="{{ url_for('user.my_bookings') }}" class="btn-red">
+          <i class="fas fa-ticket-alt"></i> View My Bookings
+        </a>
+        <a href="{{ url_for('public.home') }}" class="btn-outline">
+          <i class="fas fa-film"></i> Browse More Movies
+        </a>
+      </div>
+      <p style="text-align:center;color:rgba(255,255,255,0.25);font-size:.75rem;margin-top:14px;margin-bottom:0;">
+        <i class="fas fa-info-circle me-1"></i>Booking saved to your account.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- jsPDF CDN — generates PDF directly without html2canvas (no blank page issues) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// All booking data embedded from server
+const BOOKING = {
+  ref:      "{{ booking.booking_ref }}",
+  movie:    "{{ booking.movie_title | replace('"','') }}",
+  theatre:  "{{ booking.theatre_name | replace('"','') }}",
+  city:     "{{ booking.theatre_city | replace('"','') }}",
+  date:     "{{ booking.show_date }}",
+  time:     "{{ booking.show_time }}",
+  tickets:  {{ booking.num_tickets }},
+  seats:    "{{ (booking.seat_numbers.split('|')[0].strip()) if booking.seat_numbers else 'N/A' }}",
+  payment:  "{{ booking.payment_method }}",
+  total:    {{ booking.total_amount|int }},
+  name:     "{{ (user.name if user else session.get('user_name','Guest')) | replace('"','') }}",
+  email:    "{{ (user.email if user else 'N/A') | replace('"','') }}",
+  genre:    "{{ booking.genre if booking.genre else 'N/A' }}",
+  lang:     "{{ booking.language if booking.language else 'N/A' }}",
+  status:   "{{ booking.status }}",
+  booked:   "{{ booking.booked_at.strftime('%d %b %Y, %I:%M %p') if booking.booked_at else 'N/A' }}"
+};
+
+function downloadTicketPDF() {
+  const btn = document.getElementById('pdfBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const W = doc.internal.pageSize.getWidth();   // 210mm
+    const H = doc.internal.pageSize.getHeight();  // 297mm
+
+    // ── FULL PAGE DARK BACKGROUND ─────────────────────────────
+    doc.setFillColor(10, 10, 20);
+    doc.rect(0, 0, W, H, 'F');
+
+    // ── TOP RED HEADER BAR ────────────────────────────────────
+    doc.setFillColor(229, 9, 20);
+    doc.rect(0, 0, W, 38, 'F');
+
+    // Accent line below header
+    doc.setFillColor(180, 5, 10);
+    doc.rect(0, 33, W, 5, 'F');
+
+    // Brand name
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(28);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CINEVERSE', W / 2, 16, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(255, 200, 200);
+    doc.text('MOVIE TICKET  |  BOOKING CONFIRMATION', W / 2, 24, { align: 'center' });
+
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 220, 220);
+    doc.text('Generated: ' + BOOKING.booked, W / 2, 31, { align: 'center' });
+
+    // ── CONFIRMED BANNER ──────────────────────────────────────
+    doc.setFillColor(15, 20, 35);
+    doc.rect(0, 38, W, 20, 'F');
+
+    // Green confirmed badge circle
+    doc.setFillColor(39, 174, 96);
+    doc.circle(22, 48, 6, 'F');
+    // Check mark drawn as lines (no emoji)
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(1.2);
+    doc.line(19, 48, 21, 51);
+    doc.line(21, 51, 26, 44);
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BOOKING CONFIRMED!', 32, 46);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(160, 170, 190);
+    doc.text('Your tickets have been successfully booked.', 32, 53);
+
+    // ── THIN RED ACCENT LINE ──────────────────────────────────
+    doc.setFillColor(229, 9, 20);
+    doc.rect(0, 58, W, 2, 'F');
+
+    // ── BOOKING REF BOX ───────────────────────────────────────
+    doc.setFillColor(20, 20, 40);
+    doc.roundedRect(15, 64, W - 30, 22, 3, 3, 'F');
+    doc.setDrawColor(229, 9, 20);
+    doc.setLineWidth(0.6);
+    doc.roundedRect(15, 64, W - 30, 22, 3, 3, 'D');
+
+    doc.setTextColor(120, 130, 150);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('BOOKING REFERENCE NUMBER', W / 2, 71, { align: 'center' });
+
+    doc.setTextColor(229, 9, 20);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text(BOOKING.ref, W / 2, 82, { align: 'center' });
+
+    // ── ROW / SECTION HELPERS ─────────────────────────────────
+    let y = 96;
+
+    function sectionTitle(title) {
+      doc.setFillColor(229, 9, 20);
+      doc.rect(15, y, 3, 8, 'F');          // red left bar accent
+      doc.setFillColor(22, 22, 42);
+      doc.rect(18, y, W - 33, 8, 'F');     // dark background
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 23, y + 5.5);
+      y += 12;
+    }
+
+    function detRow(label, value, highlight) {
+      if (y > H - 25) { doc.addPage(); y = 15; }
+      // Row background alternating subtle
+      doc.setFillColor(14, 14, 28);
+      doc.rect(15, y - 1, W - 30, 9, 'F');
+
+      doc.setTextColor(140, 150, 170);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(label, 20, y + 5);
+
+      if (highlight) {
+        doc.setTextColor(39, 210, 110);
+        doc.setFont('helvetica', 'bold');
+      } else {
+        doc.setTextColor(230, 230, 240);
+        doc.setFont('helvetica', 'bold');
+      }
+      // Truncate long values
+      const valStr = String(value);
+      doc.text(valStr, W - 20, y + 5, { align: 'right', maxWidth: 90 });
+
+      doc.setDrawColor(30, 30, 55);
+      doc.setLineWidth(0.2);
+      doc.line(15, y + 8, W - 15, y + 8);
+      y += 10;
+    }
+
+    // ── PASSENGER DETAILS ────────────────────────────────────
+    sectionTitle('PASSENGER DETAILS');
+    detRow('Passenger Name', BOOKING.name);
+    detRow('Email Address', BOOKING.email);
+
+    y += 3;
+    // ── MOVIE DETAILS ─────────────────────────────────────────
+    sectionTitle('MOVIE DETAILS');
+    detRow('Movie Title', BOOKING.movie);
+    if (BOOKING.genre && BOOKING.genre !== 'N/A') detRow('Genre', BOOKING.genre);
+    if (BOOKING.lang && BOOKING.lang !== 'N/A')   detRow('Language', BOOKING.lang);
+
+    y += 3;
+    // ── VENUE & SHOW ──────────────────────────────────────────
+    sectionTitle('VENUE & SHOW DETAILS');
+    detRow('Theatre', BOOKING.theatre);
+    detRow('City', BOOKING.city);
+    detRow('Show Date', BOOKING.date);
+    detRow('Show Time', BOOKING.time);
+
+    y += 3;
+    // ── TICKET DETAILS ────────────────────────────────────────
+    sectionTitle('TICKET DETAILS');
+    detRow('No. of Tickets', BOOKING.tickets);
+    detRow('Seat Numbers', BOOKING.seats);
+    detRow('Payment Method', BOOKING.payment);
+    detRow('Booking Status', BOOKING.status, true);
+    detRow('Booked On', BOOKING.booked);
+
+    // ── TOTAL AMOUNT BOX ─────────────────────────────────────
+    y += 5;
+    doc.setFillColor(229, 9, 20);
+    doc.roundedRect(15, y, W - 30, 18, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL AMOUNT PAID', 23, y + 7);
+    doc.setFontSize(14);
+    // Use "Rs." instead of rupee symbol to avoid encoding issues
+    doc.text('Rs. ' + BOOKING.total, W - 20, y + 11, { align: 'right' });
+    y += 23;
+
+    // ── BARCODE AREA ──────────────────────────────────────────
+    doc.setFillColor(20, 20, 40);
+    doc.roundedRect(15, y, W - 30, 28, 3, 3, 'F');
+    doc.setDrawColor(40, 40, 70);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(15, y + 1, W - 30, 26, 3, 3, 'D');
+
+    // Draw barcode bars
+    const widths = [3,1,2,1,4,1,2,3,1,2,1,3,2,1,4,1,2,1,3,1,2,4,1,2,1,3,1,2,1,4,2,1,3,2,1];
+    let bx = (W - 90) / 2;
+    doc.setFillColor(229, 9, 20);
+    widths.forEach(w => {
+      doc.rect(bx, y + 5, w * 1.2, 14, 'F');
+      bx += w * 1.2 + 0.9;
+    });
+    doc.setTextColor(120, 130, 150);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(BOOKING.ref, W / 2, y + 24, { align: 'center' });
+    y += 33;
+
+    // ── FOOTER ────────────────────────────────────────────────
+    doc.setFillColor(20, 20, 40);
+    doc.rect(0, H - 20, W, 20, 'F');
+    doc.setFillColor(229, 9, 20);
+    doc.rect(0, H - 21, W, 1, 'F');
+    doc.setTextColor(100, 110, 130);
+    doc.setFontSize(7);
+    doc.text('CineVerse  |  Your Entertainment Destination', W / 2, H - 13, { align: 'center' });
+    doc.text('support@cineverse.com  |  www.cineverse.com', W / 2, H - 8, { align: 'center' });
+    doc.text('This is your official ticket. Please carry a valid ID proof.', W / 2, H - 3, { align: 'center' });
+
+    // SAVE
+    doc.save('CineVerse_Ticket_' + BOOKING.ref + '.pdf');
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check"></i> Downloaded!';
+    setTimeout(() => { btn.innerHTML = '<i class="fas fa-download"></i> Download Ticket PDF'; }, 3000);
+
+  } catch (err) {
+    console.error('PDF error:', err);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-download"></i> Download Ticket PDF';
+  }
+}
+</script>
+
+{% endblock %}

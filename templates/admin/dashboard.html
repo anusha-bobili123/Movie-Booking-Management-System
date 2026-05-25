@@ -1,0 +1,210 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Admin Dashboard – CineVerse{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<!-- KPI Cards Row 1 -->
+<style>
+.kpi-link { text-decoration:none; display:block; }
+.kpi-link .kpi { transition: transform .18s, box-shadow .18s; cursor: pointer; }
+.kpi-link:hover .kpi { transform: translateY(-4px) scale(1.03); box-shadow: 0 8px 28px rgba(0,0,0,0.35); }
+.kpi-link:hover .kpi-num { text-decoration: underline; }
+</style>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.movies') }}" class="kpi-link" title="Go to Movies">
+      <div class="kpi kpi-blue"><div class="kpi-icon"><i class="fas fa-film"></i></div><div><div class="kpi-num">{{ stats.total_movies }}</div><div class="kpi-lbl">Total Movies</div></div></div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.theatres') }}" class="kpi-link" title="Go to Theatres">
+      <div class="kpi kpi-purple"><div class="kpi-icon"><i class="fas fa-building"></i></div><div><div class="kpi-num">{{ stats.total_theatres }}</div><div class="kpi-lbl">Theatres</div></div></div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.screens') }}" class="kpi-link" title="Go to Screens">
+      <div class="kpi kpi-green"><div class="kpi-icon"><i class="fas fa-tv"></i></div><div><div class="kpi-num">{{ stats.total_screens }}</div><div class="kpi-lbl">Screens</div></div></div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.shows') }}" class="kpi-link" title="Go to Shows">
+      <div class="kpi kpi-red"><div class="kpi-icon"><i class="fas fa-calendar-alt"></i></div><div><div class="kpi-num">{{ stats.total_shows }}</div><div class="kpi-lbl">Total Shows</div></div></div>
+    </a>
+  </div>
+</div>
+<!-- KPI Cards Row 2 -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.users') }}" class="kpi-link" title="Go to App Users">
+      <div class="kpi kpi-red"><div class="kpi-icon"><i class="fas fa-users"></i></div><div><div class="kpi-num">{{ stats.app_users }}</div><div class="kpi-lbl">App Users</div></div></div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.theatre_owners') }}" class="kpi-link" title="Go to Theatre Owners">
+      <div class="kpi kpi-purple"><div class="kpi-icon"><i class="fas fa-user-tie"></i></div><div><div class="kpi-num">{{ stats.theatre_owners_count }}</div><div class="kpi-lbl">Theatre Owners</div></div></div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.analytics') }}" class="kpi-link" title="Go to Analytics / Bookings">
+      <div class="kpi kpi-blue"><div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div><div><div class="kpi-num">{{ stats.total_bookings }}</div><div class="kpi-lbl">Total Bookings</div></div></div>
+    </a>
+  </div>
+  <div class="col-6 col-xl-3">
+    <a href="{{ url_for('admin.analytics') }}" class="kpi-link" title="Go to Analytics">
+      <div class="kpi kpi-green"><div class="kpi-icon"><i class="fas fa-rupee-sign"></i></div><div><div class="kpi-num">{{ "{:,}".format(stats.total_revenue) }}</div><div class="kpi-lbl">Total Revenue</div></div></div>
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Top Movies -->
+  <div class="col-lg-6">
+    <div class="pcard h-100">
+      <div class="pcard-head"><span><i class="fas fa-fire text-danger me-2"></i>Top Movies by Shows</span><a href="{{ url_for('admin.movies') }}" class="btn-panel btn-panel-red">All Movies</a></div>
+      <div class="pcard-body p-0">
+        <table class="ptable">
+          <thead><tr><th>#</th><th>Movie</th><th>Shows</th></tr></thead>
+          <tbody>
+            {% for m in top_movies %}
+            <tr>
+              <td><span class="bdg bdg-blue">{{ loop.index }}</span></td>
+              <td class="fw-semibold">{{ m.title }}</td>
+              <td><span class="bdg bdg-green">{{ m.show_count }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted py-4">No data yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Cities -->
+  <div class="col-lg-6">
+    <div class="pcard h-100">
+      <div class="pcard-head"><span><i class="fas fa-map-marker-alt text-danger me-2"></i>Top Cities by Theatres</span><a href="{{ url_for('admin.theatres') }}" class="btn-panel btn-panel-red">All Theatres</a></div>
+      <div class="pcard-body p-0">
+        <table class="ptable">
+          <thead><tr><th>City</th><th>Theatres</th></tr></thead>
+          <tbody>
+            {% for c in top_cities %}
+            <tr>
+              <td class="fw-semibold"><i class="fas fa-city text-muted me-2"></i>{{ c.city }}</td>
+              <td><span class="bdg bdg-purple">{{ c.cnt }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="2" class="text-center text-muted py-4">No data yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Genre Distribution -->
+  <div class="col-lg-6">
+    <div class="pcard">
+      <div class="pcard-head"><span><i class="fas fa-chart-pie text-danger me-2"></i>Genre Distribution</span></div>
+      <div class="pcard-body">
+        {% for g in genre_dist %}
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="small fw-semibold" style="width:110px;color:var(--text)">{{ g.genre }}</span>
+          <div class="flex-grow-1 rounded" style="height:8px;background:rgba(255,255,255,0.07)">
+            <div style="width:{{ [((g.cnt / (genre_dist[0].cnt if genre_dist else 1))*100)|int, 100]|min }}%;height:8px;background:var(--red);border-radius:4px"></div>
+          </div>
+          <span class="small text-muted" style="min-width:24px;text-align:right">{{ g.cnt }}</span>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">No genre data available</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Theatre Owners -->
+  <div class="col-lg-6">
+    <div class="pcard">
+      <div class="pcard-head">
+        <span><i class="fas fa-user-tie text-danger me-2"></i>Theatre Owners</span>
+        <a href="{{ url_for('admin.theatre_owners') }}" class="btn-panel btn-panel-red">Manage</a>
+      </div>
+      <div class="pcard-body p-0">
+        <table class="ptable">
+          <thead><tr><th>Name</th><th>Email</th><th>Theatres</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for o in theatre_owners[:5] %}
+            <tr>
+              <td class="fw-semibold">{{ o.name }}</td>
+              <td class="small text-muted">{{ o.email }}</td>
+              <td>
+                {% set owned = o.owned_theatres.count() %}
+                <span class="bdg {% if owned > 0 %}bdg-blue{% else %}bdg-gray{% endif %}">{{ owned }}</span>
+              </td>
+              <td><span class="bdg {% if o.is_active %}bdg-green{% else %}bdg-gray{% endif %}">{{ 'Active' if o.is_active else 'Inactive' }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No owners yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Screens Overview -->
+<div class="row g-4 mt-1">
+  <div class="col-12">
+    <div class="pcard">
+      <div class="pcard-head">
+        <span><i class="fas fa-tv text-danger me-2"></i>Screens Overview</span>
+        <a href="{{ url_for('admin.screens') }}" class="btn-panel btn-panel-red">Manage Screens</a>
+      </div>
+      <div class="pcard-body p-0">
+        <table class="ptable">
+          <thead><tr><th>Theatre</th><th>City</th><th>Screens</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for t in top_theatres_screens[:6] %}
+            <tr>
+              <td class="fw-semibold">{{ t.name }}</td>
+              <td><span class="bdg bdg-blue">{{ t.city or '—' }}</span></td>
+              <td><span class="bdg bdg-green">{{ t.screen_count }}</span></td>
+              <td><a href="{{ url_for('admin.screens') }}?theater_id={{ t.theater_id }}" class="btn btn-sm btn-outline-danger"><i class="fas fa-tv me-1"></i>View</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No theatres found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Owner Modal -->
+<div class="modal fade bms-modal" id="addOwnerModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Add Theatre Owner</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div id="credBox" class="creds-box d-none mb-3">
+        <p class="fw-bold mb-2 text-success"><i class="fas fa-key me-1"></i>Credentials Generated!</p>
+        <div class="d-flex justify-content-between mb-1"><span class="small text-muted">Email</span><span id="credEmail" class="fw-bold small font-monospace"></span></div>
+        <div class="d-flex justify-content-between"><span class="small text-muted">Password</span><span id="credPass" class="fw-bold small font-monospace text-danger"></span></div>
+      </div>
+      <form id="addOwnerForm">
+        <div class="mb-3"><label class="form-label fw-semibold">Full Name*</label><input type="text" name="name" class="form-control" required placeholder="Owner name"></div>
+        <div class="mb-3"><label class="form-label fw-semibold">Email*</label><input type="email" name="email" class="form-control" required placeholder="owner@email.com"></div>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label fw-semibold">Phone</label><input type="tel" name="phone" class="form-control" placeholder="9876543210"></div>
+          <div class="col-6"><label class="form-label fw-semibold">City</label><input type="text" name="city" class="form-control" placeholder="Mumbai"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      <button id="addOwnerBtn" class="btn btn-danger fw-semibold" onclick="submitAddOwner()"><i class="fas fa-user-plus me-1"></i>Create Owner</button>
+    </div>
+  </div></div>
+</div>
+{% endblock %}

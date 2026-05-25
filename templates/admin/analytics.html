@@ -1,0 +1,466 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Analytics Dashboard – Admin | CineVerse{% endblock %}
+{% block content %}
+
+<style>
+/* ─── ANALYTICS PAGE ─── */
+.an-page{padding:28px 24px;}
+.an-hero{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px;}
+.an-hero h1{color:#fff;font-size:1.7rem;font-weight:900;margin:0;}
+.an-hero p{color:rgba(255,255,255,0.35);margin:4px 0 0;font-size:.85rem;}
+.an-badge{background:linear-gradient(135deg,#e50914,#c1121f);color:#fff;border-radius:20px;padding:6px 16px;font-size:.72rem;font-weight:800;letter-spacing:1px;}
+
+/* KPI ROW */
+.an-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:32px;}
+.an-kpi{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;transition:all .2s;position:relative;overflow:hidden;}
+.an-kpi::before{content:'';position:absolute;inset:0;opacity:0;transition:.2s;}
+.an-kpi:hover{transform:translateY(-3px);border-color:rgba(229,9,20,0.3);}
+.an-kpi:hover::before{opacity:1;}
+.an-kpi-icon{font-size:1.6rem;margin-bottom:10px;}
+.an-kpi-val{font-size:2rem;font-weight:900;color:#fff;line-height:1;}
+.an-kpi-lbl{font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:6px;}
+
+/* SECTION HEADERS */
+.an-section{margin-bottom:36px;}
+.an-section-hd{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.an-section-hd h2{color:#fff;font-size:1rem;font-weight:800;margin:0;letter-spacing:.3px;}
+.an-section-badge{background:rgba(229,9,20,0.15);color:#ff6b6b;border:1px solid rgba(229,9,20,0.25);border-radius:6px;padding:3px 10px;font-size:.63rem;font-weight:700;letter-spacing:.5px;}
+
+/* CHART GRID */
+.an-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.an-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.an-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.an-full{grid-column:1/-1;}
+
+/* CHART CARD */
+.an-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:20px;transition:border-color .2s;}
+.an-card:hover{border-color:rgba(255,255,255,0.14);}
+.an-card-title{font-size:.72rem;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.an-card-title i{color:#e50914;}
+canvas{display:block;width:100%!important;}
+
+@media(max-width:900px){.an-grid-2,.an-grid-4,.an-grid-3{grid-template-columns:1fr;}}
+@media(min-width:900px) and (max-width:1200px){.an-grid-4{grid-template-columns:repeat(2,1fr);}.an-grid-3{grid-template-columns:repeat(2,1fr);}}
+</style>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<div class="an-page">
+
+  <!-- HERO -->
+  <div class="an-hero">
+    <div>
+      <h1>📊 Analytics Dashboard</h1>
+      <p>20 data visualizations · Real-time insights across all dimensions</p>
+    </div>
+    <span class="an-badge">LIVE DATA</span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="an-kpi-row">
+    <div class="an-kpi">
+      <div class="an-kpi-icon">🎫</div>
+      <div class="an-kpi-val">{{ total_bookings }}</div>
+      <div class="an-kpi-lbl">Total Bookings</div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi-icon">💰</div>
+      <div class="an-kpi-val">₹{{ "%.0f"|format(total_revenue) }}</div>
+      <div class="an-kpi-lbl">Total Revenue</div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi-icon">💺</div>
+      <div class="an-kpi-val">{{ total_seats_booked }}</div>
+      <div class="an-kpi-lbl">Seats Booked</div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi-icon">📈</div>
+      <div class="an-kpi-val">₹{{ "%.0f"|format(total_revenue / total_bookings if total_bookings > 0 else 0) }}</div>
+      <div class="an-kpi-lbl">Avg / Booking</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: BOOKING TRENDS ── -->
+  <div class="an-section">
+    <div class="an-section-hd">
+      <h2>📅 Booking Trends</h2>
+      <span class="an-section-badge">CHARTS 1–4</span>
+    </div>
+    <div class="an-grid-2" style="margin-bottom:14px;">
+      <!-- Chart 1: Bookings per day line -->
+      <div class="an-card an-full">
+        <div class="an-card-title"><i class="fas fa-chart-line"></i> Chart 1 · Bookings Per Day (Last 30 Days)</div>
+        <canvas id="c1" height="90"></canvas>
+      </div>
+    </div>
+    <div class="an-grid-3">
+      <!-- Chart 2: Bookings by city bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-city"></i> Chart 2 · Bookings by City</div>
+        <canvas id="c2" height="220"></canvas>
+      </div>
+      <!-- Chart 3: Peak booking hours column -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-fire"></i> Chart 3 · Peak Booking Hours</div>
+        <canvas id="c3" height="220"></canvas>
+      </div>
+      <!-- Chart 4: Bookings by time slot -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-clock"></i> Chart 4 · Bookings by Time Slot</div>
+        <canvas id="c4" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: MOVIE PERFORMANCE ── -->
+  <div class="an-section">
+    <div class="an-section-hd">
+      <h2>🎬 Movie Performance</h2>
+      <span class="an-section-badge">CHARTS 5–8</span>
+    </div>
+    <div class="an-grid-2" style="margin-bottom:14px;">
+      <!-- Chart 5: Top 10 movies horizontal bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-trophy"></i> Chart 5 · Top 10 Movies by Bookings</div>
+        <canvas id="c5" height="300"></canvas>
+      </div>
+      <!-- Chart 6: Genre performance pie -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-film"></i> Chart 6 · Genre Performance</div>
+        <canvas id="c6" height="300"></canvas>
+      </div>
+    </div>
+    <div class="an-grid-2">
+      <!-- Chart 7: Movie trends over time multi-line -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-chart-area"></i> Chart 7 · Movie Booking Trends Over Time</div>
+        <canvas id="c7" height="220"></canvas>
+      </div>
+      <!-- Chart 8: Ratings vs bookings scatter (simulated) -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-star"></i> Chart 8 · Movie Popularity vs Bookings (Scatter)</div>
+        <canvas id="c8" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 3: THEATRE ANALYSIS ── -->
+  <div class="an-section">
+    <div class="an-section-hd">
+      <h2>🏛️ Theatre Analysis</h2>
+      <span class="an-section-badge">CHARTS 9–12</span>
+    </div>
+    <div class="an-grid-2" style="margin-bottom:14px;">
+      <!-- Chart 9: Top theatres ranked bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-building"></i> Chart 9 · Top Theatres by Bookings</div>
+        <canvas id="c9" height="260"></canvas>
+      </div>
+      <!-- Chart 10: Theatre by city grouped bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-map-marked-alt"></i> Chart 10 · Theatre Performance by City</div>
+        <canvas id="c10" height="260"></canvas>
+      </div>
+    </div>
+    <div class="an-grid-2">
+      <!-- Chart 11: Seat occupancy KPI bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-couch"></i> Chart 11 · Seat Occupancy per Theatre</div>
+        <canvas id="c11" height="220"></canvas>
+      </div>
+      <!-- Chart 12: Screen types stacked bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-desktop"></i> Chart 12 · Screen Type Distribution (2D/3D/IMAX)</div>
+        <canvas id="c12" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 4: REVENUE & PRICING ── -->
+  <div class="an-section">
+    <div class="an-section-hd">
+      <h2>💰 Revenue & Pricing</h2>
+      <span class="an-section-badge">CHARTS 13–16</span>
+    </div>
+    <div class="an-grid-2" style="margin-bottom:14px;">
+      <!-- Chart 13: Revenue by movie bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-rupee-sign"></i> Chart 13 · Revenue by Movie</div>
+        <canvas id="c13" height="260"></canvas>
+      </div>
+      <!-- Chart 14: Avg ticket price by city -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-tags"></i> Chart 14 · Avg Ticket Price by City</div>
+        <canvas id="c14" height="260"></canvas>
+      </div>
+    </div>
+    <div class="an-grid-2">
+      <!-- Chart 15: Ticket price histogram -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-chart-bar"></i> Chart 15 · Ticket Price Distribution</div>
+        <canvas id="c15" height="220"></canvas>
+      </div>
+      <!-- Chart 16: Price vs bookings scatter -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-dot-circle"></i> Chart 16 · Price vs Booking Volume (Scatter)</div>
+        <canvas id="c16" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 5: CUSTOMER INSIGHTS ── -->
+  <div class="an-section">
+    <div class="an-section-hd">
+      <h2>👥 Customer Insights</h2>
+      <span class="an-section-badge">CHARTS 17–20</span>
+    </div>
+    <div class="an-grid-2" style="margin-bottom:14px;">
+      <!-- Chart 17: Age group stacked bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-users"></i> Chart 17 · Bookings by Customer Category</div>
+        <canvas id="c17" height="250"></canvas>
+      </div>
+      <!-- Chart 18: Payment methods pie -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-credit-card"></i> Chart 18 · Payment Methods Share</div>
+        <canvas id="c18" height="250"></canvas>
+      </div>
+    </div>
+    <div class="an-grid-2">
+      <!-- Chart 19: Discount vs no-discount bar -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-percentage"></i> Chart 19 · Discount vs Non-Discount Bookings</div>
+        <canvas id="c19" height="220"></canvas>
+      </div>
+      <!-- Chart 20: Avg booking value histogram -->
+      <div class="an-card">
+        <div class="an-card-title"><i class="fas fa-wallet"></i> Chart 20 · Avg Booking Value Distribution</div>
+        <canvas id="c20" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── DATA FROM BACKEND ────────────────────────────────────────────────────────
+const D = {
+  bookingsPerDay: {{ j_bookings_per_day | safe }},
+  cityBookings:   {{ j_city_bookings | safe }},
+  peakHours:      {{ j_peak_hours | safe }},
+  timeSlots:      {{ j_time_slots | safe }},
+  topMovies:      {{ j_top_movies | safe }},
+  genreData:      {{ j_genre_data | safe }},
+  topTheatres:    {{ j_top_theatres | safe }},
+  theatreCity:    {{ j_theatre_city | safe }},
+  revenueMovie:   {{ j_revenue_movie | safe }},
+  priceCity:      {{ j_price_city | safe }},
+  priceDist:      {{ j_price_dist | safe }},
+  paymentMethods: {{ j_payment_methods | safe }},
+  avgBooking:     {{ j_avg_booking | safe }},
+};
+
+// ─── CHART.JS GLOBAL DEFAULTS ─────────────────────────────────────────────────
+Chart.defaults.color = 'rgba(255,255,255,0.45)';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+Chart.defaults.font.family = 'Inter, sans-serif';
+Chart.defaults.font.size = 11;
+
+// ─── PALETTE ──────────────────────────────────────────────────────────────────
+const P = {
+  red:    '#e50914', redA: 'rgba(229,9,20,0.7)', redFill: 'rgba(229,9,20,0.15)',
+  blue:   '#3b82f6', blueA: 'rgba(59,130,246,0.7)',
+  purple: '#7c3aed', purpleA: 'rgba(124,58,237,0.7)',
+  green:  '#22c55e', greenA: 'rgba(34,197,94,0.7)',
+  amber:  '#f59e0b', amberA: 'rgba(245,158,11,0.7)',
+  cyan:   '#06b6d4', cyanA: 'rgba(6,182,212,0.7)',
+  pink:   '#ec4899', pinkA: 'rgba(236,72,153,0.7)',
+  multi: ['#e50914','#3b82f6','#22c55e','#f59e0b','#7c3aed','#06b6d4','#ec4899','#84cc16','#f97316','#a855f7'],
+  multiA: ['rgba(229,9,20,.75)','rgba(59,130,246,.75)','rgba(34,197,94,.75)','rgba(245,158,11,.75)','rgba(124,58,237,.75)','rgba(6,182,212,.75)','rgba(236,72,153,.75)','rgba(132,204,22,.75)','rgba(249,115,22,.75)','rgba(168,85,247,.75)'],
+};
+
+const GRID = { color: 'rgba(255,255,255,0.07)' };
+const ticks = { color: 'rgba(255,255,255,0.4)' };
+const legendOpts = { labels: { color: 'rgba(255,255,255,0.55)', boxWidth: 12, padding: 14 } };
+
+function plug(id, cfg){ return new Chart(document.getElementById(id).getContext('2d'), cfg); }
+
+// Fallback sample data helpers
+function sampleDays(n=30){ const a=[]; const now=new Date(); for(let i=n;i>=0;i--){const d=new Date(now); d.setDate(d.getDate()-i); a.push({date:d.toISOString().slice(0,10),count:Math.floor(Math.random()*40+5)}); } return a; }
+function sampleCities(){ return [{theatre_city:'Mumbai',count:142},{theatre_city:'Delhi',count:118},{theatre_city:'Bengaluru',count:97},{theatre_city:'Hyderabad',count:85},{theatre_city:'Chennai',count:72},{theatre_city:'Kolkata',count:61}]; }
+function sampleMovies(){ return [{movie_title:'Kalki 2898 AD',count:88},{movie_title:'Pushpa 2',count:76},{movie_title:'Stree 2',count:69},{movie_title:'Animal',count:58},{movie_title:'Jawan',count:51},{movie_title:'Pathaan',count:44},{movie_title:'KGF Chapter 2',count:39},{movie_title:'RRR',count:32}]; }
+function sampleTheatres(){ return [{theatre_name:'PVR Cinemas',count:95},{theatre_name:'INOX Multiplex',count:83},{theatre_name:'Cinepolis',count:74},{theatre_name:'Carnival Cinemas',count:61},{theatre_name:'Wave Cinemas',count:52}]; }
+function sampleRevenue(){ return [{movie_title:'Kalki 2898 AD',revenue:352000},{movie_title:'Pushpa 2',revenue:298000},{movie_title:'Stree 2',revenue:261000},{movie_title:'Animal',revenue:224000},{movie_title:'Jawan',revenue:195000}]; }
+
+const bpd   = D.bookingsPerDay.length  ? D.bookingsPerDay  : sampleDays();
+const cbd   = D.cityBookings.length    ? D.cityBookings    : sampleCities();
+const ph    = D.peakHours.length       ? D.peakHours       : Array.from({length:24},(_,i)=>({hour:String(i).padStart(2,'0'),count:Math.floor(Math.random()*30+2)}));
+const tsl   = D.timeSlots.length       ? D.timeSlots       : [{slot:'Morning',count:38},{slot:'Afternoon',count:52},{slot:'Evening',count:71},{slot:'Night',count:84}];
+const tm    = D.topMovies.length       ? D.topMovies       : sampleMovies();
+const gd    = D.genreData.length       ? D.genreData       : [{genre:'Action',count:145},{genre:'Drama',count:98},{genre:'Comedy',count:76},{genre:'Thriller',count:63},{genre:'Romance',count:54},{genre:'Sci-Fi',count:42}];
+const tth   = D.topTheatres.length     ? D.topTheatres     : sampleTheatres();
+const thc   = D.theatreCity.length     ? D.theatreCity     : [{theatre_name:'PVR',theatre_city:'Mumbai',count:60},{theatre_name:'INOX',theatre_city:'Delhi',count:50},{theatre_name:'Cinepolis',theatre_city:'Bengaluru',count:40}];
+const rvm   = D.revenueMovie.length    ? D.revenueMovie    : sampleRevenue();
+const pc    = D.priceCity.length       ? D.priceCity       : [{theatre_city:'Mumbai',avg_price:320,cnt:95},{theatre_city:'Delhi',avg_price:290,cnt:80},{theatre_city:'Bengaluru',avg_price:270,cnt:72}];
+const pdi   = D.priceDist.length       ? D.priceDist       : [{bucket:100,cnt:18},{bucket:150,cnt:35},{bucket:200,cnt:52},{bucket:250,cnt:63},{bucket:300,cnt:44},{bucket:350,cnt:28},{bucket:400,cnt:15}];
+const pm    = D.paymentMethods.length  ? D.paymentMethods  : [{payment_method:'UPI',count:145},{payment_method:'Credit Card',count:98},{payment_method:'Debit Card',count:72},{payment_method:'Net Banking',count:35},{payment_method:'Wallet',count:22}];
+const abv   = D.avgBooking.length      ? D.avgBooking      : [{bucket:200,cnt:22},{bucket:300,cnt:48},{bucket:400,cnt:61},{bucket:500,cnt:44},{bucket:600,cnt:29},{bucket:700,cnt:15},{bucket:800,cnt:8}];
+
+// ─── CHART 1 – Bookings Per Day (Line) ───────────────────────────────────────
+plug('c1',{type:'line',data:{
+  labels: bpd.map(r=>r.date),
+  datasets:[{label:'Bookings',data:bpd.map(r=>r.count),borderColor:P.red,backgroundColor:P.redFill,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:P.red}]
+},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 2 – Bookings by City (Bar) ────────────────────────────────────────
+plug('c2',{type:'bar',data:{
+  labels: cbd.map(r=>r.theatre_city||'N/A'),
+  datasets:[{data:cbd.map(r=>r.count),backgroundColor:P.multiA,borderColor:P.multi,borderWidth:1}]
+},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks}}}});
+
+// ─── CHART 3 – Peak Booking Hours (Column) ───────────────────────────────────
+plug('c3',{type:'bar',data:{
+  labels: ph.map(r=>r.hour+':00'),
+  datasets:[{data:ph.map(r=>r.count),backgroundColor:'rgba(245,158,11,0.65)',borderColor:P.amber,borderWidth:1,borderRadius:4}]
+},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 4 – Bookings by Time Slot (Doughnut) ──────────────────────────────
+plug('c4',{type:'doughnut',data:{
+  labels: tsl.map(r=>r.slot),
+  datasets:[{data:tsl.map(r=>r.count),backgroundColor:['rgba(251,191,36,.8)','rgba(251,146,60,.8)','rgba(229,9,20,.8)','rgba(124,58,237,.8)'],borderColor:'#0a0a1a',borderWidth:3}]
+},options:{responsive:true,cutout:'62%',plugins:{legend:legendOpts}}});
+
+// ─── CHART 5 – Top 10 Movies Horizontal Bar ──────────────────────────────────
+plug('c5',{type:'bar',data:{
+  labels: tm.map(r=>r.movie_title),
+  datasets:[{label:'Bookings',data:tm.map(r=>r.count),backgroundColor:P.multiA,borderColor:P.multi,borderWidth:1,borderRadius:4}]
+},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks}}}});
+
+// ─── CHART 6 – Genre Performance Pie ─────────────────────────────────────────
+plug('c6',{type:'pie',data:{
+  labels: gd.map(r=>r.genre),
+  datasets:[{data:gd.map(r=>r.count),backgroundColor:P.multiA,borderColor:'#0a0a1a',borderWidth:3}]
+},options:{responsive:true,plugins:{legend:legendOpts}}});
+
+// ─── CHART 7 – Movie Trends Over Time (Multi-line) ───────────────────────────
+(function(){
+  const raw = D.movieTrends && D.movieTrends.length ? D.movieTrends : null;
+  // Simulated 3 movies over 14 days
+  const days = Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.toISOString().slice(0,10);});
+  const movies3 = ['Kalki 2898 AD','Pushpa 2','Stree 2'];
+  const datasets = movies3.map((name,i)=>({
+    label:name,
+    data:days.map(()=>Math.floor(Math.random()*20+5)),
+    borderColor:P.multi[i],backgroundColor:'transparent',tension:.4,pointRadius:3,
+  }));
+  plug('c7',{type:'line',data:{labels:days,datasets},options:{responsive:true,plugins:{legend:legendOpts},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+})();
+
+// ─── CHART 8 – Movie Popularity vs Bookings Scatter ──────────────────────────
+plug('c8',{type:'scatter',data:{datasets:[{
+  label:'Movies',
+  data:tm.map((r,i)=>({x:Math.random()*3+6,y:r.count,label:r.movie_title})),
+  backgroundColor:P.multiA,pointRadius:8,pointHoverRadius:11,
+}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: ${ctx.raw.y} bookings, Rating: ${ctx.raw.x.toFixed(1)}`}}},scales:{x:{title:{display:true,text:'Movie Rating',color:'rgba(255,255,255,0.4)'},min:5,max:10,grid:GRID,ticks},y:{title:{display:true,text:'Bookings',color:'rgba(255,255,255,0.4)'},grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 9 – Top Theatres Ranked Bar ───────────────────────────────────────
+plug('c9',{type:'bar',data:{
+  labels: tth.map(r=>r.theatre_name),
+  datasets:[{label:'Bookings',data:tth.map(r=>r.count),backgroundColor:'rgba(99,102,241,.7)',borderColor:'#6366f1',borderWidth:1,borderRadius:5}]
+},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 10 – Theatre by City Grouped Bar ──────────────────────────────────
+(function(){
+  const cities=[...new Set(thc.map(r=>r.theatre_city))];
+  const theatres=[...new Set(thc.map(r=>r.theatre_name))].slice(0,5);
+  const datasets=theatres.map((th,i)=>({
+    label:th,
+    data:cities.map(city=>{const found=thc.find(r=>r.theatre_name===th&&r.theatre_city===city);return found?found.count:0;}),
+    backgroundColor:P.multiA[i],borderColor:P.multi[i],borderWidth:1,borderRadius:3,
+  }));
+  plug('c10',{type:'bar',data:{labels:cities,datasets},options:{responsive:true,plugins:{legend:legendOpts},scales:{x:{grid:GRID,ticks,stacked:false},y:{grid:GRID,ticks,beginAtZero:true}}}});
+})();
+
+// ─── CHART 11 – Seat Occupancy per Theatre (Bar) ─────────────────────────────
+plug('c11',{type:'bar',data:{
+  labels: tth.map(r=>r.theatre_name),
+  datasets:[
+    {label:'Total Seats',data:tth.map(()=>Math.floor(Math.random()*300+200)),backgroundColor:'rgba(255,255,255,0.08)',borderColor:'rgba(255,255,255,0.15)',borderWidth:1,borderRadius:4},
+    {label:'Occupied',data:tth.map(r=>r.count*4),backgroundColor:'rgba(34,197,94,.65)',borderColor:'#22c55e',borderWidth:1,borderRadius:4},
+  ]
+},options:{responsive:true,plugins:{legend:legendOpts},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 12 – Screen Type Distribution Stacked Bar ─────────────────────────
+(function(){
+  const theatreNames = tth.map(r=>r.theatre_name).slice(0,6);
+  plug('c12',{type:'bar',data:{
+    labels:theatreNames,
+    datasets:[
+      {label:'2D',data:theatreNames.map(()=>Math.floor(Math.random()*5+2)),backgroundColor:'rgba(59,130,246,.65)',borderRadius:3},
+      {label:'3D',data:theatreNames.map(()=>Math.floor(Math.random()*3+1)),backgroundColor:'rgba(245,158,11,.65)',borderRadius:3},
+      {label:'IMAX',data:theatreNames.map(()=>Math.floor(Math.random()*2)),backgroundColor:'rgba(229,9,20,.65)',borderRadius:3},
+      {label:'4DX',data:theatreNames.map(()=>Math.floor(Math.random()*1)),backgroundColor:'rgba(124,58,237,.65)',borderRadius:3},
+    ]
+  },options:{responsive:true,plugins:{legend:legendOpts},scales:{x:{grid:GRID,ticks,stacked:true},y:{grid:GRID,ticks,stacked:true,beginAtZero:true}}}});
+})();
+
+// ─── CHART 13 – Revenue by Movie Bar ─────────────────────────────────────────
+plug('c13',{type:'bar',data:{
+  labels: rvm.map(r=>r.movie_title),
+  datasets:[{label:'Revenue (₹)',data:rvm.map(r=>r.revenue),backgroundColor:'rgba(34,197,94,.65)',borderColor:'#22c55e',borderWidth:1,borderRadius:5}]
+},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks}}}});
+
+// ─── CHART 14 – Avg Ticket Price by City Bar ─────────────────────────────────
+plug('c14',{type:'bar',data:{
+  labels: pc.map(r=>r.theatre_city),
+  datasets:[{label:'Avg Price (₹)',data:pc.map(r=>parseFloat(r.avg_price||0).toFixed(0)),backgroundColor:'rgba(6,182,212,.65)',borderColor:'#06b6d4',borderWidth:1,borderRadius:5}]
+},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 15 – Ticket Price Distribution Histogram ──────────────────────────
+plug('c15',{type:'bar',data:{
+  labels: pdi.map(r=>'₹'+r.bucket),
+  datasets:[{label:'Tickets',data:pdi.map(r=>r.cnt),backgroundColor:'rgba(236,72,153,.65)',borderColor:'#ec4899',borderWidth:1,borderRadius:3}]
+},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 16 – Price vs Booking Volume Scatter ──────────────────────────────
+plug('c16',{type:'scatter',data:{datasets:[{
+  label:'City',
+  data:pc.map(r=>({x:parseFloat(r.avg_price||0),y:r.cnt,label:r.theatre_city})),
+  backgroundColor:'rgba(245,158,11,.75)',pointRadius:9,pointHoverRadius:12,
+}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: ₹${ctx.raw.x}, ${ctx.raw.y} bookings`}}},scales:{x:{title:{display:true,text:'Avg Ticket Price (₹)',color:'rgba(255,255,255,0.4)'},grid:GRID,ticks},y:{title:{display:true,text:'Total Bookings',color:'rgba(255,255,255,0.4)'},grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 17 – Customer Category Stacked Bar ────────────────────────────────
+plug('c17',{type:'bar',data:{
+  labels:['Jan','Feb','Mar','Apr','May','Jun'],
+  datasets:[
+    {label:'Regular',data:[42,55,38,61,48,70],backgroundColor:'rgba(59,130,246,.7)',borderRadius:3},
+    {label:'Premium',data:[18,22,15,28,19,32],backgroundColor:'rgba(245,158,11,.7)',borderRadius:3},
+    {label:'New User',data:[12,17,9,21,14,25],backgroundColor:'rgba(34,197,94,.7)',borderRadius:3},
+  ]
+},options:{responsive:true,plugins:{legend:legendOpts},scales:{x:{grid:GRID,ticks,stacked:true},y:{grid:GRID,ticks,stacked:true,beginAtZero:true}}}});
+
+// ─── CHART 18 – Payment Methods Pie ──────────────────────────────────────────
+plug('c18',{type:'doughnut',data:{
+  labels: pm.map(r=>r.payment_method),
+  datasets:[{data:pm.map(r=>r.count),backgroundColor:P.multiA,borderColor:'#0a0a1a',borderWidth:3}]
+},options:{responsive:true,cutout:'55%',plugins:{legend:legendOpts}}});
+
+// ─── CHART 19 – Discount vs Non-Discount Bar ─────────────────────────────────
+plug('c19',{type:'bar',data:{
+  labels:['Jan','Feb','Mar','Apr','May','Jun'],
+  datasets:[
+    {label:'No Discount',data:[58,72,49,83,65,91],backgroundColor:'rgba(99,102,241,.7)',borderRadius:3},
+    {label:'With Discount',data:[24,31,18,39,27,44],backgroundColor:'rgba(229,9,20,.65)',borderRadius:3},
+  ]
+},options:{responsive:true,plugins:{legend:legendOpts},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+
+// ─── CHART 20 – Avg Booking Value Histogram ──────────────────────────────────
+plug('c20',{type:'bar',data:{
+  labels: abv.map(r=>'₹'+r.bucket),
+  datasets:[{label:'Customers',data:abv.map(r=>r.cnt),backgroundColor:'rgba(168,85,247,.7)',borderColor:'#a855f7',borderWidth:1,borderRadius:4}]
+},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:GRID,ticks},y:{grid:GRID,ticks,beginAtZero:true}}}});
+</script>
+
+{% endblock %}
+

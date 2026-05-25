@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CineVerse{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- TMDB image CDN — preconnect so poster images load instantly -->
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+  <link rel="dns-prefetch" href="https://image.tmdb.org">
+  <!-- Preload critical above-fold images for instant display (HD w780) -->
+  <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w780/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w780/d5NXSklXo0qyIYkgV94XAgMIckC.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w780/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w780/iuFNMS8vlzsH9RTiQFQnZXqiDf9.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w780/8kNruSfhk5IoE4eZOc4UpvDn6tM.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="https://image.tmdb.org/t/p/w780/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg" fetchpriority="high">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bms-navbar sticky-top">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('public.home') }}">
+      <div class="brand-icon"><i class="fas fa-film"></i></div>
+      <span class="brand-text">CineVerse</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('public.home') }}#top" onclick="if(window.location.pathname=='/'){event.preventDefault();window.scrollTo({top:0,behavior:'smooth'});history.replaceState(null,'',window.location.pathname);}"><i class="fas fa-home me-1"></i>Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('public.home') }}#movies-section" onclick="if(window.location.pathname=='/'){event.preventDefault();document.getElementById('movies-section')?.scrollIntoView({behavior:'smooth'});}"><i class="fas fa-clapperboard me-1"></i>Movies</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('public.contact') }}"><i class="fas fa-envelope me-1"></i>Contact</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        {% if session.get('user_id') %}
+          <span style="color:var(--text-muted);font-size:.82rem" class="d-none d-md-inline"><i class="fas fa-user-circle me-1"></i>{{ session.get('user_name','') }}</span>
+          {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-btn nav-btn-outline"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
+          {% elif session.get('role') == 'theatre_owner' %}
+            <a href="{{ url_for('theatre_owner.dashboard') }}" class="nav-btn nav-btn-outline"><i class="fas fa-building me-1"></i>Dashboard</a>
+          {% else %}
+            <a href="{{ url_for('user.dashboard') }}" class="nav-btn nav-btn-outline"><i class="fas fa-user me-1"></i>My Account</a>
+          {% endif %}
+          <a href="{{ url_for('auth.logout') }}" class="nav-btn nav-btn-red">Logout</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="nav-btn nav-btn-outline">Login</a>
+          <a href="{{ url_for('auth.signup') }}" class="nav-btn nav-btn-red">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-3">
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show rounded-3">
+          {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer class="bms-footer">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div class="brand-icon"><i class="fas fa-film"></i></div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#fff">CineVerse</span>
+        </div>
+        <p style="color:var(--text-muted);font-size:.85rem">India's most immersive entertainment ticketing platform.</p>
+      </div>
+      <div class="col-md-2">
+        <h6 style="color:#fff;font-weight:700;margin-bottom:14px;font-size:.85rem;letter-spacing:1px;text-transform:uppercase">Movies</h6>
+        <ul class="list-unstyled">
+          <li class="mb-2"><a href="{{ url_for('public.home') }}" style="color:var(--text-muted);font-size:.83rem">Now Showing</a></li>
+          <li class="mb-2"><a href="{{ url_for('public.home') }}?genre=Action" style="color:var(--text-muted);font-size:.83rem">Action</a></li>
+          <li class="mb-2"><a href="{{ url_for('public.home') }}?genre=Comedy" style="color:var(--text-muted);font-size:.83rem">Comedy</a></li>
+        </ul>
+      </div>
+      <div class="col-md-2">
+        <h6 style="color:#fff;font-weight:700;margin-bottom:14px;font-size:.85rem;letter-spacing:1px;text-transform:uppercase">Account</h6>
+        <ul class="list-unstyled">
+          <li class="mb-2"><a href="{{ url_for('auth.login') }}" style="color:var(--text-muted);font-size:.83rem">Login</a></li>
+          <li class="mb-2"><a href="{{ url_for('auth.signup') }}" style="color:var(--text-muted);font-size:.83rem">Sign Up</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h6 style="color:#fff;font-weight:700;margin-bottom:14px;font-size:.85rem;letter-spacing:1px;text-transform:uppercase">Contact</h6>
+        <p style="color:var(--text-muted);font-size:.83rem"><i class="fas fa-envelope me-2" style="color:var(--red)"></i>support@cineverse.in</p>
+        <p style="color:var(--text-muted);font-size:.83rem"><i class="fas fa-phone me-2" style="color:var(--red)"></i>1800-599-0099</p>
+      </div>
+    </div>
+    <hr style="border-color:var(--border);margin-top:20px">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <span style="color:var(--text-muted);font-size:.78rem">&copy; 2024 CineVerse. All rights reserved.</span>
+      <span style="color:var(--text-muted);font-size:.78rem">Made with <i class="fas fa-heart" style="color:var(--red)"></i> for Movie Lovers</span>
+    </div>
+  </div>
+</footer>
+
+<div id="toastBox" style="position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

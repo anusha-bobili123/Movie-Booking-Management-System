@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}My Bookings – CineVerse{% endblock %}
+{% block content %}
+<div style="background:linear-gradient(180deg,rgba(10,10,15,1),rgba(15,15,26,1));padding:32px 0 24px">
+  <div class="container">
+    <h3 class="text-white fw-bold mb-0"><i class="fas fa-ticket-alt text-warning me-2"></i>My Bookings</h3>
+    <p class="text-white-50 mb-0 mt-1">View and manage all your ticket bookings</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4" style="border-bottom:2px solid var(--border)">
+    <li class="nav-item">
+      <a class="nav-link {% if tab=='upcoming' %}active text-danger border-bottom border-danger border-2{% else %}text-muted{% endif %} border-0 fw-semibold"
+         href="{{ url_for('user.my_bookings', tab='upcoming') }}">
+        <i class="fas fa-calendar-check me-1"></i>Upcoming
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if tab=='past' %}active text-danger border-bottom border-danger border-2{% else %}text-muted{% endif %} border-0 fw-semibold"
+         href="{{ url_for('user.my_bookings', tab='past') }}">
+        <i class="fas fa-history me-1"></i>Past
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if tab=='cancelled' %}active text-danger border-bottom border-danger border-2{% else %}text-muted{% endif %} border-0 fw-semibold"
+         href="{{ url_for('user.my_bookings', tab='cancelled') }}">
+        <i class="fas fa-times-circle me-1"></i>Cancelled
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if tab=='messages' %}active text-danger border-bottom border-danger border-2{% else %}text-muted{% endif %} border-0 fw-semibold position-relative"
+         href="{{ url_for('user.my_bookings', tab='messages') }}">
+        <i class="fas fa-envelope me-1"></i>My Messages
+        {% if unread_replies and tab != 'messages' %}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem">{{ unread_replies }}</span>
+        {% endif %}
+      </a>
+    </li>
+  </ul>
+
+  {% if tab == 'messages' %}
+  <!-- ═══════════════ MESSAGES TAB ═══════════════ -->
+  {% if all_messages %}
+    <div class="mb-3">
+      <p class="text-muted small"><i class="fas fa-info-circle me-1"></i>All your enquiries and cancellation requests sent to admin, along with their replies.</p>
+    </div>
+    {% for msg in all_messages %}
+    <div class="booking-history-card" style="margin-bottom:18px;border-left:4px solid {% if msg.is_cancellation %}#f59e0b{% else %}#6366f1{% endif %};">
+      <!-- Header row -->
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+          <span class="fw-bold text-white" style="font-size:.95rem;">
+            {% if msg.is_cancellation %}
+              <i class="fas fa-ticket-alt me-2" style="color:#f59e0b"></i>Cancellation Request
+            {% else %}
+              <i class="fas fa-envelope me-2" style="color:#6366f1"></i>General Enquiry
+            {% endif %}
+          </span>
+          <div class="text-muted small mt-1">Sent: {{ msg.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          {% if msg.status == 'Responded' %}
+            <span class="bdg bdg-green"><i class="fas fa-check-circle me-1"></i>Replied</span>
+          {% elif msg.status == 'Read' %}
+            <span class="bdg bdg-blue"><i class="fas fa-eye me-1"></i>Read by Admin</span>
+          {% else %}
+            <span class="bdg bdg-gray"><i class="fas fa-clock me-1"></i>Pending</span>
+          {% endif %}
+          {% if msg.is_cancellation %}
+            {% if msg.refund_status == 'Refunded' %}
+              <span class="bdg" style="background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);">
+                <i class="fas fa-rupee-sign me-1"></i>Refund Approved
+              </span>
+            {% elif msg.refund_status == 'Pending' %}
+              <span class="bdg" style="background:rgba(249,115,22,0.15);color:#fb923c;border:1px solid rgba(249,115,22,0.3);">
+                <i class="fas fa-hourglass-half me-1"></i>Refund Pending
+              </span>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Booking snapshot for cancellations -->
+      {% if msg.is_cancellation and msg.booking %}
+      <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px 16px;margin-bottom:14px;">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+          <div>
+            <div style="font-size:.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px">Movie</div>
+            <div class="fw-semibold text-white small">{{ msg.booking.movie_title }}</div>
+          </div>
+          <div>
+            <div style="font-size:.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px">Booking Ref</div>
+            <div class="fw-bold text-danger font-monospace small">{{ msg.booking.booking_ref }}</div>
+          </div>
+          <div>
+            <div style="font-size:.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px">Amount Paid</div>
+            <div class="fw-bold text-white small">&#8377;{{ msg.booking.total_amount|int }}</div>
+          </div>
+          {% if msg.refund_status == 'Refunded' %}
+          <div>
+            <div style="font-size:.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px">Refund Amount</div>
+            <div class="fw-bold small" style="color:#4ade80;font-size:1.05rem !important;">&#8377;{{ msg.booking.total_amount|int }} <i class="fas fa-check-circle ms-1"></i></div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Your original message -->
+      <div class="mb-3">
+        <div style="font-size:.7rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Message</div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;color:rgba(255,255,255,0.7);font-size:.85rem;white-space:pre-wrap;line-height:1.6;">{{ msg.message }}</div>
+      </div>
+
+      <!-- Admin reply -->
+      {% if msg.admin_reply %}
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:14px 16px;">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#fff;flex-shrink:0">
+            <i class="fas fa-headset"></i>
+          </div>
+          <div>
+            <div style="font-size:.8rem;font-weight:700;color:#a5b4fc;">Admin Reply</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,0.35);">{{ msg.replied_at.strftime('%d %b %Y, %H:%M') if msg.replied_at else '' }}</div>
+          </div>
+        </div>
+        <div style="color:#c7d2fe;font-size:.87rem;white-space:pre-wrap;line-height:1.6;">{{ msg.admin_reply }}</div>
+      </div>
+      {% else %}
+      <div style="background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center;color:rgba(255,255,255,0.3);font-size:.82rem;">
+        <i class="fas fa-clock me-1"></i>Awaiting admin reply…
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <i class="fas fa-envelope-open"></i>
+      <h5>No Messages Yet</h5>
+      <p>You have not sent any enquiries or cancellation requests.</p>
+      <a href="{{ url_for('public.contact') }}" class="btn btn-danger mt-2"><i class="fas fa-paper-plane me-2"></i>Contact Support</a>
+    </div>
+  {% endif %}
+
+  {% else %}
+  <!-- ═══════════════ BOOKING TABS ═══════════════ -->
+  {% if bookings %}
+    {% for b in bookings %}
+    {% set cm = cancel_msg_map.get(b.id) if cancel_msg_map else None %}
+    <div class="booking-history-card {% if b.status=='Cancelled' %}cancelled{% elif tab=='past' %}past{% endif %}">
+      <div class="d-flex align-items-start gap-3 flex-wrap">
+        <!-- Icon -->
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(180deg,rgba(10,10,15,1),rgba(15,15,26,1));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0">
+          <i class="fas fa-film"></i>
+        </div>
+
+        <!-- Details -->
+        <div class="flex-grow-1">
+          <div class="fw-bold fs-6 mb-1">{{ b.movie_title }}</div>
+          <div class="text-muted small mb-2">
+            <i class="fas fa-building me-1"></i>{{ b.theatre_name }}, {{ b.theatre_city }}
+          </div>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <span class="bdg bdg-yellow"><i class="fas fa-calendar me-1"></i>{{ b.show_date }}</span>
+            <span class="bdg bdg-blue"><i class="fas fa-clock me-1"></i>{{ b.show_time }}</span>
+            <span class="bdg bdg-gray"><i class="fas fa-ticket-alt me-1"></i>{{ b.num_tickets }} Ticket(s)</span>
+            {% if b.seat_numbers %}<span class="bdg bdg-purple"><i class="fas fa-chair me-1"></i>{{ b.seat_numbers.split(' | Cancel')[0].split(' | Snacks')[0] }}</span>{% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="fw-bold text-danger fs-6">&#8377;{{ b.total_amount|int }}</span>
+            <span class="bdg {% if b.status=='Confirmed' %}bdg-green{% else %}bdg-red{% endif %}">{{ b.status }}</span>
+            <span class="text-muted small">via {{ b.payment_method }}</span>
+          </div>
+
+          <!-- ── Cancellation / Refund info (cancelled tab only) ── -->
+          {% if b.status == 'Cancelled' and cm %}
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);">
+              {% if b.cancel_reason %}
+              <div class="mb-2">
+                <span style="font-size:.7rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;">Cancellation Reason</span>
+                <div style="color:rgba(255,255,255,0.6);font-size:.83rem;margin-top:3px;">{{ b.cancel_reason }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Refund status -->
+              {% if cm.refund_status == 'Refunded' %}
+              <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:10px 14px;margin-bottom:10px;">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-check-circle" style="color:#4ade80;font-size:1.1rem;"></i>
+                  <div>
+                    <div style="font-size:.78rem;font-weight:700;color:#4ade80;">Refund Approved</div>
+                    <div style="font-size:.82rem;color:rgba(255,255,255,0.7);">&#8377;{{ b.total_amount|int }} will be credited to your original payment method within 5–7 business days.</div>
+                  </div>
+                </div>
+              </div>
+              {% elif cm.refund_status == 'Pending' %}
+              <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:10px 14px;margin-bottom:10px;">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-hourglass-half" style="color:#fb923c;"></i>
+                  <div style="font-size:.82rem;color:rgba(255,255,255,0.6);">Refund of <strong style="color:#fb923c;">&#8377;{{ b.total_amount|int }}</strong> is under review by admin.</div>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Admin reply -->
+              {% if cm.admin_reply %}
+              <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:10px 14px;">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="fas fa-headset" style="color:#818cf8;font-size:.85rem;"></i>
+                  <span style="font-size:.75rem;font-weight:700;color:#a5b4fc;">Admin Reply</span>
+                  <span style="font-size:.68rem;color:rgba(255,255,255,0.3);">{{ cm.replied_at.strftime('%d %b %Y') if cm.replied_at else '' }}</span>
+                </div>
+                <div style="color:#c7d2fe;font-size:.83rem;white-space:pre-wrap;line-height:1.5;">{{ cm.admin_reply }}</div>
+              </div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Ref + Action -->
+        <div class="text-end flex-shrink-0">
+          <div class="text-muted" style="font-size:.7rem;letter-spacing:1px">BOOKING REF</div>
+          <div class="fw-bold font-monospace text-danger mb-2">{{ b.booking_ref }}</div>
+          <div class="text-muted" style="font-size:.72rem">{{ b.booked_at.strftime('%d %b %Y, %H:%M') if b.booked_at else '' }}</div>
+          {% if b.status == 'Confirmed' %}
+          {% set show_dt_str = b.show_date|string + ' ' + b.show_time %}
+          {% set now_dt = now %}
+          {% if tab == 'upcoming' %}
+          <button class="btn btn-sm btn-outline-danger mt-2" onclick="openCancelModal({{ b.id }}, '{{ b.movie_title }}', {{ b.total_amount|int }})">
+            <i class="fas fa-times me-1"></i>Cancel
+          </button>
+          {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <i class="fas fa-{% if tab=='upcoming' %}calendar-check{% elif tab=='past' %}history{% else %}times-circle{% endif %}"></i>
+      <h5>No {{ tab|title }} Bookings</h5>
+      {% if tab == 'upcoming' %}
+        <p>You have no upcoming bookings.</p>
+        <a href="{{ url_for('public.home') }}" class="btn btn-danger mt-2"><i class="fas fa-film me-2"></i>Browse Movies</a>
+      {% elif tab == 'past' %}
+        <p>No past bookings found.</p>
+      {% else %}
+        <p>No cancelled bookings.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+<!-- ── CANCEL BOOKING MODAL ── -->
+<div id="cancelModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+  <div style="background:linear-gradient(135deg,#0f0f1e,#1a1a2e);border:1px solid rgba(229,9,20,0.3);border-radius:16px;padding:28px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.3);display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-exclamation-triangle" style="color:#e50914;font-size:.9rem;"></i>
+        </div>
+        <div>
+          <div style="color:#fff;font-weight:800;font-size:1rem;">Cancel Booking</div>
+          <div style="color:rgba(255,255,255,0.4);font-size:.75rem;" id="cancelMovieTitle">—</div>
+        </div>
+      </div>
+      <button onclick="closeCancelModal()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.2rem;cursor:pointer;"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div style="background:rgba(229,9,20,0.08);border:1px solid rgba(229,9,20,0.2);border-radius:10px;padding:14px;margin-bottom:20px;">
+      <div style="font-size:.72rem;color:rgba(255,255,255,0.4);margin-bottom:4px;">REFUND AMOUNT</div>
+      <div style="font-size:1.6rem;font-weight:900;color:#4ade80;" id="cancelRefundAmt">₹0</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,0.45);margin-top:4px;"><i class="fas fa-clock me-1"></i>Refund processed after admin review</div>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Reason for Cancellation</div>
+      <div id="cancelReasons" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="margin-top:10px;">
+        <textarea id="cancelOtherText" placeholder="Other reason (optional)..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;padding:10px;font-size:.82rem;resize:none;height:60px;outline:none;box-sizing:border-box;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeCancelModal()" style="flex:1;padding:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:600;cursor:pointer;">Keep Booking</button>
+      <button onclick="submitCancel()" id="cancelSubmitBtn" style="flex:1;padding:12px;background:linear-gradient(135deg,#e50914,#b00710);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;"><i class="fas fa-times-circle me-2"></i>Cancel Booking</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.cancel-reason-option {
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  border-radius:8px;cursor:pointer;transition:all .15s;
+}
+.cancel-reason-option:hover { background:rgba(229,9,20,0.1);border-color:rgba(229,9,20,0.3); }
+.cancel-reason-option.selected { background:rgba(229,9,20,0.15);border-color:rgba(229,9,20,0.5); }
+.cancel-reason-option input { accent-color:#e50914; }
+.cancel-reason-option span { color:rgba(255,255,255,0.8);font-size:.83rem; }
+</style>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const CANCEL_REASONS = [
+  "💰 Price / Amount not preferable",
+  "⏰ Timing not convenient",
+  "🏥 Medical emergency or illness",
+  "🌧️ Bad weather / travel issue",
+  "👥 Plans changed with friends/family",
+  "🎬 Movie got bad reviews",
+  "📍 Theatre location inconvenient",
+  "🔁 Booked by mistake"
+];
+
+let _cancelBookingId = null;
+
+function openCancelModal(id, movieTitle, refundAmt) {
+  _cancelBookingId = id;
+  document.getElementById('cancelMovieTitle').textContent = movieTitle;
+  document.getElementById('cancelRefundAmt').textContent = '₹' + refundAmt;
+  document.getElementById('cancelOtherText').value = '';
+
+  const reasonsEl = document.getElementById('cancelReasons');
+  reasonsEl.innerHTML = CANCEL_REASONS.map((r, i) => `
+    <label class="cancel-reason-option" onclick="selectReason(this)">
+      <input type="radio" name="cancelReason" value="${r}" style="margin:0;">
+      <span>${r}</span>
+    </label>
+  `).join('');
+
+  document.getElementById('cancelModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function selectReason(el) {
+  document.querySelectorAll('.cancel-reason-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function closeCancelModal() {
+  document.getElementById('cancelModal').style.display = 'none';
+  document.body.style.overflow = '';
+  _cancelBookingId = null;
+}
+
+async function submitCancel() {
+  const selected = document.querySelector('input[name="cancelReason"]:checked');
+  const other = document.getElementById('cancelOtherText').value.trim();
+  const reason = selected ? selected.value : (other || 'No reason specified');
+  const finalReason = other ? reason + ' - ' + other : reason;
+
+  if (!selected && !other) {
+    alert('Please select a reason for cancellation.');
+    return;
+  }
+
+  const btn = document.getElementById('cancelSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
+
+  try {
+    const res = await fetch(`/user/booking/${_cancelBookingId}/cancel`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({reason: finalReason})
+    });
+    const d = await res.json();
+    if (d.success) {
+      closeCancelModal();
+      // Show refund notification
+      const notif = document.createElement('div');
+      notif.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;background:linear-gradient(135deg,#064e3b,#065f46);border:1px solid #4ade80;border-radius:12px;padding:16px 20px;color:#fff;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.4);';
+      notif.innerHTML = `<div style="font-weight:700;margin-bottom:4px;"><i class="fas fa-check-circle me-2" style="color:#4ade80;"></i>Booking Cancelled</div><div style="font-size:.82rem;color:rgba(255,255,255,0.7);">${d.message}</div>`;
+      document.body.appendChild(notif);
+      setTimeout(() => { notif.remove(); location.reload(); }, 4000);
+    } else {
+      alert(d.message);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-times-circle me-2"></i>Cancel Booking';
+    }
+  } catch {
+    alert('Network error. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-times-circle me-2"></i>Cancel Booking';
+  }
+}
+</script>
+{% endblock %}

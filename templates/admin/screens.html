@@ -1,0 +1,156 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Screens – Admin{% endblock %}
+{% block page_title %}Screens Management{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h4>Theatre Screens</h4><p>Manage screens across all theatres</p></div>
+  <button class="btn btn-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#addScreenModal">
+    <i class="fas fa-plus me-2"></i>Add Screen
+  </button>
+</div>
+
+<!-- Filter Bar -->
+<div class="pcard mb-3">
+  <div class="pcard-body py-2">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <span class="text-muted fw-semibold small"><i class="fas fa-filter me-1"></i>Filter by Theatre:</span>
+      <select class="form-select form-select-sm" style="width:260px;" onchange="location.href='?theater_id='+this.value">
+        <option value="">All Theatres</option>
+        {% for t in theatres %}
+        <option value="{{ t.theater_id }}" {% if t.theater_id == selected_theatre %}selected{% endif %}>
+          {{ t.name }}{% if t.city %} – {{ t.city }}{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      {% if selected_theatre %}
+      <a href="?" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times me-1"></i>Clear</a>
+      {% endif %}
+      <span class="ms-auto badge rounded-pill" style="background:var(--red);">{{ screens|length }} screen(s)</span>
+    </div>
+  </div>
+</div>
+
+{% if screens %}
+<div class="row g-3">
+  {% for sc in screens %}
+  <div class="col-md-6 col-lg-4">
+    <div class="pcard h-100" style="border:1px solid rgba(229,9,20,0.2);background:rgba(20,20,35,0.9);">
+      <div class="pcard-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#e50914,#ff6b6b);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-tv" style="color:#fff;font-size:1.2rem;"></i>
+          </div>
+          <div>
+            <div class="fw-bold" style="color:#fff;font-size:1rem;">{{ sc.screen_number }}</div>
+            <div class="small text-muted">{{ sc.theatre_name }}</div>
+            {% if sc.city %}<span class="bdg bdg-blue mt-1">{{ sc.city }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="d-flex gap-3 mb-3">
+          <div class="text-center">
+            <div class="fw-bold" style="color:#e50914;font-size:1.3rem;">{{ sc.total_seats or '—' }}</div>
+            <div class="small text-muted">Total Seats</div>
+          </div>
+          <div class="text-center">
+            <div class="fw-bold" style="color:#28a745;font-size:1.3rem;">{{ sc.show_count }}</div>
+            <div class="small text-muted">Shows</div>
+          </div>
+        </div>
+        <div class="small text-muted mb-3"><i class="fas fa-fingerprint me-1"></i>ID: <code style="color:#aaa;font-size:.78rem;">{{ sc.screen_id }}</code></div>
+        <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteScreen('{{ sc.screen_id }}', '{{ sc.screen_number }}')">
+          <i class="fas fa-trash me-1"></i>Delete Screen
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fas fa-tv"></i>
+  <h5>No Screens Found</h5>
+  <p>{% if selected_theatre %}No screens for this theatre yet.{% else %}No screens in the system yet.{% endif %}</p>
+  <button class="btn btn-danger mt-2" data-bs-toggle="modal" data-bs-target="#addScreenModal">
+    <i class="fas fa-plus me-2"></i>Add First Screen
+  </button>
+</div>
+{% endif %}
+
+<!-- ADD SCREEN MODAL -->
+<div class="modal fade bms-modal" id="addScreenModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="fas fa-tv me-2"></i>Add New Screen</h5>
+      <button class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <form id="addScreenForm">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Theatre *</label>
+          <select name="theater_id" class="form-select" required>
+            <option value="">Select Theatre…</option>
+            {% for t in theatres %}
+            <option value="{{ t.theater_id }}" {% if t.theater_id == selected_theatre %}selected{% endif %}>
+              {{ t.name }}{% if t.city %} – {{ t.city }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Screen Name / Number *</label>
+          <input type="text" name="screen_number" class="form-control" required placeholder="e.g. Screen 1, IMAX Hall, Audi 3">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Total Seats</label>
+          <input type="number" name="total_seats" class="form-control" min="1" max="1000" value="150" placeholder="150">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button id="addScreenBtn" class="btn btn-danger fw-semibold" onclick="submitAddScreen()">
+        <i class="fas fa-plus me-1"></i>Add Screen
+      </button>
+    </div>
+  </div></div>
+</div>
+
+<script>
+async function submitAddScreen() {
+  const form = document.getElementById('addScreenForm');
+  const payload = {
+    theater_id: form.querySelector('[name="theater_id"]').value,
+    screen_number: form.querySelector('[name="screen_number"]').value.trim(),
+    total_seats: form.querySelector('[name="total_seats"]').value || 150,
+  };
+  if (!payload.theater_id || !payload.screen_number) {
+    window.toast('Theatre and screen name are required.', 'danger'); return;
+  }
+  const btn = document.getElementById('addScreenBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding…';
+  try {
+    const res = await fetch('/admin/screens/add', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast('Screen added successfully!', 'success');
+      setTimeout(() => location.reload(), 1200);
+    } else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus me-1"></i>Add Screen';
+}
+
+async function deleteScreen(id, name) {
+  if (!confirm(`Delete screen "${name}"? This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`/admin/screens/${id}/delete`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}
+    });
+    const d = await res.json();
+    if (d.success) { window.toast('Screen deleted!', 'success'); setTimeout(() => location.reload(), 1000); }
+    else { window.toast(d.message || 'Failed.', 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - CineVerse{% endblock %}
+
+{% block content %}
+
+<!-- CINEMATIC HERO HEADER -->
+<section style="position:relative;padding:80px 20px 60px;background:linear-gradient(180deg,rgba(255,45,85,0.08) 0%,transparent 100%);overflow:hidden;">
+  <div style="position:absolute;inset:0;pointer-events:none;">
+    <div style="position:absolute;top:-60px;left:-80px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(255,45,85,0.12) 0%,transparent 70%);"></div>
+    <div style="position:absolute;bottom:-40px;right:-60px;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,255,0.07) 0%,transparent 70%);"></div>
+  </div>
+  <div class="container" style="position:relative;z-index:1;text-align:center;">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,45,85,0.12);border:1px solid rgba(255,45,85,0.3);border-radius:50px;padding:6px 18px;margin-bottom:20px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:#ff2d55;display:inline-block;animation:pulse 1.5s infinite;"></span>
+      <span style="color:#ff2d55;font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Get In Touch</span>
+    </div>
+    <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,6vw,4.5rem);letter-spacing:4px;color:#fff;margin-bottom:14px;line-height:1;">
+      CONTACT <span style="background:linear-gradient(135deg,#ff2d55,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">US</span>
+    </h1>
+    <p style="color:rgba(255,255,255,0.45);font-size:1.05rem;max-width:520px;margin:0 auto;">
+      Have a question or feedback? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+    </p>
+  </div>
+</section>
+
+<!-- CONTACT INFO CARDS -->
+<section style="padding:0 20px 40px;">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:50px;">
+
+      <div class="cv-info-card" style="background:rgba(255,45,85,0.06);border:1px solid rgba(255,45,85,0.18);border-radius:16px;padding:24px;text-align:center;transition:all .3s;">
+        <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#ff2d55,#ff6b6b);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:1.3rem;box-shadow:0 6px 20px rgba(255,45,85,0.35);">📧</div>
+        <h4 style="color:#fff;font-weight:700;font-size:.95rem;margin-bottom:6px;letter-spacing:.5px;">Email Us</h4>
+        <a href="mailto:support@cineverse.com" style="color:rgba(255,255,255,0.5);font-size:.85rem;transition:color .3s;">support@cineverse.com</a>
+      </div>
+
+      <div class="cv-info-card" style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:16px;padding:24px;text-align:center;transition:all .3s;">
+        <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#00d4ff,#0f3460);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:1.3rem;box-shadow:0 6px 20px rgba(0,212,255,0.25);">📱</div>
+        <h4 style="color:#fff;font-weight:700;font-size:.95rem;margin-bottom:6px;letter-spacing:.5px;">Call Us</h4>
+        <a href="tel:+919999999999" style="color:rgba(255,255,255,0.5);font-size:.85rem;transition:color .3s;">+91 9999 999 999</a>
+      </div>
+
+      <div class="cv-info-card" style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);border-radius:16px;padding:24px;text-align:center;transition:all .3s;">
+        <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:1.3rem;box-shadow:0 6px 20px rgba(124,58,237,0.35);">📍</div>
+        <h4 style="color:#fff;font-weight:700;font-size:.95rem;margin-bottom:6px;letter-spacing:.5px;">Visit Us</h4>
+        <p style="color:rgba(255,255,255,0.5);font-size:.85rem;margin:0;">CineVerse HQ, Mumbai</p>
+      </div>
+
+      <div class="cv-info-card" style="background:rgba(0,230,118,0.05);border:1px solid rgba(0,230,118,0.15);border-radius:16px;padding:24px;text-align:center;transition:all .3s;">
+        <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#00e676,#047857);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:1.3rem;box-shadow:0 6px 20px rgba(0,230,118,0.25);">🕐</div>
+        <h4 style="color:#fff;font-weight:700;font-size:.95rem;margin-bottom:6px;letter-spacing:.5px;">Hours</h4>
+        <p style="color:rgba(255,255,255,0.5);font-size:.85rem;margin:0;">Mon – Sun · 9AM – 11PM IST</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CONTACT FORM -->
+<section style="padding:0 20px 80px;">
+  <div class="container">
+    <div style="max-width:680px;margin:0 auto;">
+      <div style="background:rgba(15,15,26,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:48px 40px;backdrop-filter:blur(20px);box-shadow:0 24px 80px rgba(0,0,0,0.5);position:relative;overflow:hidden;">
+        <!-- Decorative glow -->
+        <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,45,85,0.1) 0%,transparent 70%);pointer-events:none;"></div>
+
+        <div style="margin-bottom:32px;">
+          <h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:3px;color:#fff;margin-bottom:6px;">SEND A MESSAGE</h2>
+          <p style="color:rgba(255,255,255,0.35);font-size:.85rem;margin:0;">Fill out the form below and our team will get back to you within 24 hours.</p>
+        </div>
+
+        {% if success %}
+        <div style="background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-left:4px solid #00e676;border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.2rem;">✅</span>
+          <div>
+            <strong style="color:#00e676;">Message Sent!</strong>
+            <p style="color:rgba(255,255,255,0.6);font-size:.85rem;margin:2px 0 0;">Thank you for reaching out. We'll get back to you soon.</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div style="background:rgba(255,45,85,0.1);border:1px solid rgba(255,45,85,0.3);border-left:4px solid #ff2d55;border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.2rem;">❌</span>
+          <div>
+            <strong style="color:#ff2d55;">Error</strong>
+            <p style="color:rgba(255,255,255,0.6);font-size:.85rem;margin:2px 0 0;">{{ error }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <form method="POST" class="cv-contact-form">
+          <div style="margin-bottom:22px;">
+            <label style="display:block;color:rgba(255,255,255,0.55);font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">
+              <i class="fas fa-user me-1" style="color:#ff2d55;"></i> Full Name *
+            </label>
+            <input type="text" name="name" placeholder="Your full name" required
+              style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 16px;color:#fff;font-size:.95rem;outline:none;transition:all .3s;font-family:'Inter',sans-serif;"
+              onfocus="this.style.borderColor='rgba(255,45,85,0.6)';this.style.background='rgba(255,45,85,0.05)';this.style.boxShadow='0 0 0 3px rgba(255,45,85,0.1)'"
+              onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.background='rgba(255,255,255,0.05)';this.style.boxShadow='none'">
+          </div>
+
+          <div style="margin-bottom:22px;">
+            <label style="display:block;color:rgba(255,255,255,0.55);font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">
+              <i class="fas fa-envelope me-1" style="color:#ff2d55;"></i> Email Address *
+            </label>
+            <input type="email" name="email" placeholder="your.email@example.com" required
+              style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 16px;color:#fff;font-size:.95rem;outline:none;transition:all .3s;font-family:'Inter',sans-serif;"
+              onfocus="this.style.borderColor='rgba(255,45,85,0.6)';this.style.background='rgba(255,45,85,0.05)';this.style.boxShadow='0 0 0 3px rgba(255,45,85,0.1)'"
+              onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.background='rgba(255,255,255,0.05)';this.style.boxShadow='none'">
+          </div>
+
+          <div style="margin-bottom:28px;">
+            <label style="display:block;color:rgba(255,255,255,0.55);font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">
+              <i class="fas fa-comment-dots me-1" style="color:#ff2d55;"></i> Message *
+            </label>
+            <textarea name="message" rows="5" placeholder="Tell us what's on your mind..." required
+              style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 16px;color:#fff;font-size:.95rem;outline:none;transition:all .3s;resize:vertical;font-family:'Inter',sans-serif;min-height:140px;"
+              onfocus="this.style.borderColor='rgba(255,45,85,0.6)';this.style.background='rgba(255,45,85,0.05)';this.style.boxShadow='0 0 0 3px rgba(255,45,85,0.1)'"
+              onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.background='rgba(255,255,255,0.05)';this.style.boxShadow='none'"></textarea>
+          </div>
+
+          <button type="submit"
+            style="width:100%;background:linear-gradient(135deg,#ff2d55,#ff6b35);border:none;border-radius:12px;padding:15px;color:#fff;font-weight:700;font-size:1rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .3s;box-shadow:0 8px 24px rgba(255,45,85,0.35);font-family:'Inter',sans-serif;"
+            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 14px 32px rgba(255,45,85,0.45)'"
+            onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 24px rgba(255,45,85,0.35)'">
+            <i class="fas fa-paper-plane me-2"></i>SEND MESSAGE
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.2)} }
+.cv-info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+}
+.cv-contact-form input::placeholder,
+.cv-contact-form textarea::placeholder { color: rgba(255,255,255,0.28); }
+.cv-contact-form input:-webkit-autofill,
+.cv-contact-form textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px rgba(15,15,26,0.9) inset;
+  -webkit-text-fill-color: #fff;
+}
+</style>
+{% endblock %}

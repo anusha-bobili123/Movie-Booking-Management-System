@@ -1,0 +1,347 @@
+{% extends "theatre_owner/base_owner.html" %}
+{% block title %}{{ theatre.name if theatre else 'Theatre' }} – CineVerse{% endblock %}
+{% block page_title %}Theatre Details{% endblock %}
+{% block content %}
+
+{% if theatre %}
+<div class="ph">
+  <div>
+    <h4>{{ theatre.name }}</h4>
+    <p><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ theatre.city }}{% if theatre.state %}, {{ theatre.state }}{% endif %}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#addShowModal">
+      <i class="fas fa-plus me-1"></i>Add Show
+    </button>
+    <a href="{{ url_for('theatre_owner.my_theatres') }}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i>Back
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left: Theatre Info + Screens -->
+  <div class="col-lg-4">
+    <div class="pcard mb-4">
+      <div class="pcard-head"><span><i class="fas fa-info-circle text-danger me-2"></i>Theatre Info</span></div>
+      <div class="pcard-body">
+        <div class="detail-row"><span class="lbl">Name</span><span class="val">{{ theatre.name }}</span></div>
+        <div class="detail-row"><span class="lbl">City</span><span class="val">{{ theatre.city or '—' }}</span></div>
+        <div class="detail-row"><span class="lbl">State</span><span class="val">{{ theatre.state or '—' }}</span></div>
+        <div class="detail-row"><span class="lbl">Location</span><span class="val small">{{ theatre.location or '—' }}</span></div>
+        <div class="detail-row"><span class="lbl">Total Screens</span><span class="val"><span class="bdg bdg-blue">{{ screens|length }}</span></span></div>
+      </div>
+    </div>
+
+    <div class="pcard">
+      <div class="pcard-head"><span><i class="fas fa-tv text-danger me-2"></i>Screens</span></div>
+      <div class="pcard-body p-0">
+        {% for sc in screens %}
+        <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid var(--border)">
+          <div>
+            <div class="fw-bold small">Screen {{ sc.screen_number }}</div>
+            <div class="text-muted" style="font-size:.75rem">{{ sc.total_seats }} total seats</div>
+          </div>
+          <span class="bdg bdg-blue">{{ sc.show_count }} shows</span>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-3 small">No screens found</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Shows Table -->
+  <div class="col-lg-8">
+    <div class="pcard">
+      <div class="pcard-head">
+        <span><i class="fas fa-calendar-alt text-danger me-2"></i>Shows at this Theatre</span>
+        <button class="btn-panel btn-panel-red" data-bs-toggle="modal" data-bs-target="#addShowModal">
+          <i class="fas fa-plus me-1"></i>Add Show
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="ptable">
+          <thead>
+            <tr><th>Movie</th><th>Screen</th><th>Date</th><th>Time</th><th>Price</th><th>Seats</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for s in shows %}
+            <tr>
+              <td class="fw-semibold small">{{ s.movie_title }}</td>
+              <td><span class="bdg bdg-gray">#{{ s.screen_number }}</span></td>
+              <td class="small">{{ s.show_date }}</td>
+              <td><span class="bdg bdg-yellow">{{ s.start_time }}</span></td>
+              <td class="text-danger fw-bold">₹{{ s.price_per_ticket|int if s.price_per_ticket else '—' }}</td>
+              <td>
+                {% if s.available_seats is not none %}
+                  {% if s.available_seats > 20 %}<span class="bdg bdg-green">{{ s.available_seats }}</span>
+                  {% elif s.available_seats > 5 %}<span class="bdg bdg-yellow">{{ s.available_seats }}</span>
+                  {% else %}<span class="bdg bdg-red">{{ s.available_seats }}</span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-primary"
+                    onclick="openEditModal('{{ s.show_id }}','{{ s.show_date }}','{{ s.start_time }}','{{ s.price_per_ticket }}','{{ s.available_seats }}')">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger"
+                    onclick="deleteShow('{{ s.show_id }}','{{ s.movie_title }}')">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                No shows found for this theatre.
+                <br>
+                <button class="btn btn-danger btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#addShowModal">
+                  <i class="fas fa-plus me-1"></i>Add First Show
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SHOW MODAL (pre-selects this theatre) -->
+<div class="modal fade bms-modal" id="addShowModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Add New Show – {{ theatre.name }}</h5>
+      <button class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <form id="addShowForm">
+        <input type="hidden" name="theatre_id" value="{{ theatre.theater_id }}">
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Theatre</label>
+          <input type="text" class="form-control" value="{{ theatre.name }} – {{ theatre.city }}" disabled style="opacity:.7">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Screen *</label>
+          <select name="screen_id" id="addScreenSelect" class="form-select" required>
+            <option value="">Loading screens…</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Movie *</label>
+          <select name="movie_id" id="addMovieSelect" class="form-select" required>
+            <option value="">Loading movies…</option>
+          </select>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label fw-semibold">Show Date *</label>
+            <input type="date" name="show_date" class="form-control" required>
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold">Start Time *</label>
+            <input type="time" name="start_time" class="form-control" required>
+          </div>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-6">
+            <label class="form-label fw-semibold">Price per Ticket (₹) *</label>
+            <input type="number" name="price_per_ticket" class="form-control" required min="1" placeholder="200">
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold">Available Seats</label>
+            <input type="number" name="available_seats" id="addAvailSeats" class="form-control" min="1" placeholder="Auto from screen">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button id="addShowBtn" class="btn btn-danger fw-semibold" onclick="submitAddShow()">
+        <i class="fas fa-plus me-1"></i>Add Show
+      </button>
+    </div>
+  </div></div>
+</div>
+
+<!-- EDIT SHOW MODAL -->
+<div class="modal fade bms-modal" id="editShowModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Show</h5>
+      <button class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editShowId">
+      <div class="row g-2">
+        <div class="col-6">
+          <label class="form-label fw-semibold">Show Date *</label>
+          <input type="date" id="editShowDate" class="form-control" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold">Start Time *</label>
+          <input type="time" id="editStartTime" class="form-control" required>
+        </div>
+      </div>
+      <div class="row g-2 mt-1">
+        <div class="col-6">
+          <label class="form-label fw-semibold">Price per Ticket (₹) *</label>
+          <input type="number" id="editPrice" class="form-control" required min="1">
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold">Available Seats *</label>
+          <input type="number" id="editAvailSeats" class="form-control" required min="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button id="editShowBtn" class="btn btn-primary fw-semibold" onclick="submitEditShow()">
+        <i class="fas fa-save me-1"></i>Save Changes
+      </button>
+    </div>
+  </div></div>
+</div>
+
+{% else %}
+<div class="empty-state">
+  <i class="fas fa-building"></i>
+  <h5>Theatre Not Found</h5>
+  <p>You don't have access to this theatre.</p>
+  <a href="{{ url_for('theatre_owner.my_theatres') }}" class="btn btn-danger mt-2">Back to Theatres</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const THEATRE_ID = "{{ theatre.theater_id if theatre else '' }}";
+
+// Set min date to today
+document.querySelectorAll('[name="show_date"]').forEach(el => {
+  el.min = new Date().toISOString().split('T')[0];
+});
+
+// Load screens for this theatre on page load
+(async () => {
+  const sel = document.getElementById('addScreenSelect');
+  if (!THEATRE_ID || !sel) return;
+  try {
+    const res = await fetch(`/theatre-owner/api/screens/${THEATRE_ID}`);
+    const data = await res.json();
+    if (data.length) {
+      sel.innerHTML = '<option value="">— Select Screen —</option>' +
+        data.map(s => `<option value="${s.id}" data-seats="${s.seats}">Screen ${s.number} (${s.seats} seats)</option>`).join('');
+      sel.onchange = () => {
+        const opt = sel.options[sel.selectedIndex];
+        const seats = opt.getAttribute('data-seats');
+        const avail = document.getElementById('addAvailSeats');
+        if (avail && seats) { avail.value = seats; avail.placeholder = seats; }
+      };
+    } else {
+      sel.innerHTML = '<option value="">No screens available</option>';
+    }
+  } catch { sel.innerHTML = '<option value="">Error loading screens</option>'; }
+})();
+
+// Load movies
+(async () => {
+  const sel = document.getElementById('addMovieSelect');
+  if (!sel) return;
+  try {
+    const res = await fetch('/theatre-owner/api/movies-list');
+    const data = await res.json();
+    sel.innerHTML = '<option value="">— Select Movie —</option>' +
+      data.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+  } catch { sel.innerHTML = '<option value="">Error loading movies</option>'; }
+})();
+
+async function submitAddShow() {
+  const form = document.getElementById('addShowForm');
+  const f = (n) => form.querySelector(`[name="${n}"]`)?.value?.trim();
+  const payload = {
+    theatre_id: THEATRE_ID,
+    movie_id: f('movie_id'),
+    screen_id: f('screen_id'),
+    show_date: f('show_date'),
+    start_time: f('start_time'),
+    price_per_ticket: f('price_per_ticket'),
+    available_seats: f('available_seats') || null
+  };
+  if (!payload.movie_id || !payload.screen_id || !payload.show_date || !payload.start_time || !payload.price_per_ticket) {
+    window.toast('Please fill all required fields.', 'danger'); return;
+  }
+  const btn = document.getElementById('addShowBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding…';
+  try {
+    const res = await fetch('/theatre-owner/shows/add', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast(d.message, 'success');
+      bootstrap.Modal.getInstance(document.getElementById('addShowModal')).hide();
+      setTimeout(() => location.reload(), 1200);
+    } else { window.toast(d.message, 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus me-1"></i>Add Show';
+}
+
+function openEditModal(showId, showDate, startTime, price, availSeats) {
+  document.getElementById('editShowId').value = showId;
+  document.getElementById('editShowDate').value = showDate;
+  document.getElementById('editStartTime').value = startTime;
+  document.getElementById('editPrice').value = price;
+  document.getElementById('editAvailSeats').value = availSeats;
+  new bootstrap.Modal(document.getElementById('editShowModal')).show();
+}
+
+async function submitEditShow() {
+  const showId = document.getElementById('editShowId').value;
+  const payload = {
+    show_date: document.getElementById('editShowDate').value,
+    start_time: document.getElementById('editStartTime').value,
+    price_per_ticket: document.getElementById('editPrice').value,
+    available_seats: document.getElementById('editAvailSeats').value
+  };
+  if (!payload.show_date || !payload.start_time || !payload.price_per_ticket || !payload.available_seats) {
+    window.toast('Please fill all required fields.', 'danger'); return;
+  }
+  const btn = document.getElementById('editShowBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+  try {
+    const res = await fetch(`/theatre-owner/shows/${showId}/edit`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (d.success) {
+      window.toast(d.message, 'success');
+      bootstrap.Modal.getInstance(document.getElementById('editShowModal')).hide();
+      setTimeout(() => location.reload(), 1200);
+    } else { window.toast(d.message, 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-1"></i>Save Changes';
+}
+
+async function deleteShow(showId, title) {
+  if (!confirm(`Delete show for "${title}"?\nThis cannot be undone.`)) return;
+  try {
+    const res = await fetch(`/theatre-owner/shows/${showId}/delete`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}
+    });
+    const d = await res.json();
+    if (d.success) { window.toast(d.message, 'success'); setTimeout(() => location.reload(), 1000); }
+    else { window.toast(d.message, 'danger'); }
+  } catch { window.toast('Network error.', 'danger'); }
+}
+</script>
+{% endblock %}

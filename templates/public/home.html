@@ -1,0 +1,829 @@
+{% extends "base.html" %}
+{% block title %}CineVerse – Book Movie Tickets Online{% endblock %}
+{% block content %}
+
+<!-- CINEMATIC HERO -->
+<section class="hero">
+  <div class="hero-bg-particles" id="heroBg"></div>
+  <div class="hero-spotlight"></div>
+  <div class="container hero-content">
+    <!-- TOP ROW: text left, posters right -->
+    <div class="row align-items-center mb-4">
+      <div class="col-lg-7">
+        <div class="hero-badge mb-3"><span class="badge-dot"></span>Now Showing in Theatres</div>
+        <h1>Experience <span class="text-gradient">Cinema</span><br>Like Never Before</h1>
+        <p class="hero-subtitle">Discover blockbusters, indie gems, and everything in between. Book your seats in seconds.</p>
+        <div class="hero-stats mt-4">
+          <div class="hero-stat"><span class="stat-num">500+</span><span class="stat-label">Movies</span></div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat"><span class="stat-num">50+</span><span class="stat-label">Theatres</span></div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat"><span class="stat-num">20+</span><span class="stat-label">Cities</span></div>
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-flex justify-content-end">
+        <!-- Side-by-side HD posters -->
+        <div class="hero-poster-row">
+          <div class="hero-poster-item">
+            <img src="https://image.tmdb.org/t/p/w780/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Interstellar" loading="eager" fetchpriority="high" decoding="async">
+            <div class="poster-glow"></div>
+          </div>
+          <div class="hero-poster-item hero-poster-tall">
+            <img src="https://image.tmdb.org/t/p/w780/d5NXSklXo0qyIYkgV94XAgMIckC.jpg" alt="Oppenheimer" loading="eager" fetchpriority="high" decoding="async">
+            <div class="poster-glow"></div>
+          </div>
+          <div class="hero-poster-item">
+            <img src="https://image.tmdb.org/t/p/w780/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg" alt="Inception" loading="eager" fetchpriority="high" decoding="async">
+            <div class="poster-glow"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- SEARCH BAR centered below -->
+    <div class="row justify-content-center">
+      <div class="col-lg-10 col-xl-8">
+        <div class="hero-search-wrapper" style="position:relative;">
+        <div class="hero-search">
+          <div class="search-icon-wrap"><i class="fas fa-search"></i></div>
+          <input type="text" id="searchInput" placeholder="Search movies, genres…" value="{{ search }}">
+          <div class="search-divider"></div>
+          <button type="button" id="cityPickerBtn" onclick="openCityModal()">
+            <i class="fas fa-map-marker-alt me-1" style="color:#e50914;"></i>
+            <span id="cityPickerLabel">{{ selected_city if selected_city else 'Select City' }}</span>
+            <i class="fas fa-chevron-down ms-1" style="font-size:.7rem;opacity:.6;"></i>
+          </button>
+          <input type="hidden" id="citySelect" value="{{ selected_city }}">
+          <button id="searchBtn"><i class="fas fa-search me-1"></i>Find</button>
+        </div>
+        </div><!-- /.hero-search-wrapper -->
+      </div>
+    </div>
+  </div>
+  <div class="hero-wave">
+    <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="rgba(10,10,15,1)"/></svg>
+  </div>
+</section>
+
+<!-- TRENDING MARQUEE -->
+<div class="trending-ticker">
+  <div class="ticker-label"><i class="fas fa-bolt me-1"></i>TRENDING</div>
+  <div class="ticker-track">
+    <div class="ticker-inner">
+      <span>🔥 Thunder Strike &mdash; Action</span><span class="ticker-dot">&bull;</span>
+      <span>🚀 Galaxy's Edge &mdash; Sci-Fi</span><span class="ticker-dot">&bull;</span>
+      <span>💀 Midnight Fear &mdash; Horror</span><span class="ticker-dot">&bull;</span>
+      <span>⚔️ Empire of Kings &mdash; Historical</span><span class="ticker-dot">&bull;</span>
+      <span>🎭 Echoes of Time &mdash; Drama</span><span class="ticker-dot">&bull;</span>
+      <span>🌿 Wild Frontier &mdash; Adventure</span><span class="ticker-dot">&bull;</span>
+      <span>😂 Laugh Out Loud &mdash; Comedy</span><span class="ticker-dot">&bull;</span>
+      <span>🔥 Thunder Strike &mdash; Action</span><span class="ticker-dot">&bull;</span>
+      <span>🚀 Galaxy's Edge &mdash; Sci-Fi</span><span class="ticker-dot">&bull;</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOP 10 CAROUSEL -->
+<div class="top10-section">
+  <div class="section-header">
+    <div class="section-label">
+      <div class="label-icon"><i class="fas fa-trophy"></i></div>
+      TOP 10 THIS WEEK
+    </div>
+    <div class="section-sub">Hand-picked blockbusters you cannot miss</div>
+  </div>
+  <div class="carousel-wrapper">
+    <div class="carousel-track-container">
+      <div class="top10-carousel" id="top10Carousel">
+
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" alt="Interstellar" loading="eager" fetchpriority="high">
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#1</span>
+              <div class="top10-title">THUNDER STRIKE</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Action</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>9.2</span>
+                <span class="top10-badge lang">Hindi</span>
+              </div>
+              <div class="top10-desc">An electrifying action saga that redefines the genre.</div>
+            </div>
+            <div class="top10-rank-bg">#1</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/d5NXSklXo0qyIYkgV94XAgMIckC.jpg" alt="Oppenheimer" loading="eager" fetchpriority="high">
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#2</span>
+              <div class="top10-title">GALAXY'S EDGE</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Sci-Fi</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>8.9</span>
+                <span class="top10-badge lang">English</span>
+              </div>
+              <div class="top10-desc">Journey to the edge of the universe in this epic space adventure.</div>
+            </div>
+            <div class="top10-rank-bg">#2</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg" alt="Inception" loading="eager" fetchpriority="high">
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#3</span>
+              <div class="top10-title">ECHOES OF TIME</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Drama</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>8.7</span>
+                <span class="top10-badge lang">Hindi</span>
+              </div>
+              <div class="top10-desc">A heart-touching story that echoes across generations.</div>
+            </div>
+            <div class="top10-rank-bg">#3</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/iuFNMS8vlzsH9RTiQFQnZXqiDf9.jpg" alt="The Dark Knight" loading="eager" >
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#4</span>
+              <div class="top10-title">DARK HORIZON</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Thriller</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>8.5</span>
+                <span class="top10-badge lang">English</span>
+              </div>
+              <div class="top10-desc">Where every shadow hides a secret and no one is safe.</div>
+            </div>
+            <div class="top10-rank-bg">#4</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/8kNruSfhk5IoE4eZOc4UpvDn6tM.jpg" alt="Dune Part Two" loading="eager" >
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#5</span>
+              <div class="top10-title">FOREVER YOURS</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Romance</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>8.4</span>
+                <span class="top10-badge lang">Hindi</span>
+              </div>
+              <div class="top10-desc">A timeless love story that will steal your heart.</div>
+            </div>
+            <div class="top10-rank-bg">#5</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg" alt="Mad Max" loading="eager" >
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#6</span>
+              <div class="top10-title">MIDNIGHT FEAR</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Horror</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>8.3</span>
+                <span class="top10-badge lang">Tamil</span>
+              </div>
+              <div class="top10-desc">The nightmare begins when the lights go out.</div>
+            </div>
+            <div class="top10-rank-bg">#6</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/mDfJG3LC3Dqb67AZ52x3Z0jU0uB.jpg" alt="Guardians" loading="eager" >
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#7</span>
+              <div class="top10-title">WILD FRONTIER</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Adventure</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>8.1</span>
+                <span class="top10-badge lang">Telugu</span>
+              </div>
+              <div class="top10-desc">Brave the unknown in this breathtaking adventure epic.</div>
+            </div>
+            <div class="top10-rank-bg">#7</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/rktDFPbfHfUbArZ6OOOKsXcv0Bm.jpg" alt="Grand Budapest" loading="eager" >
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#8</span>
+              <div class="top10-title">LAUGH OUT LOUD</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Comedy</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>7.9</span>
+                <span class="top10-badge lang">Hindi</span>
+              </div>
+              <div class="top10-desc">The funniest film of the year — guaranteed laughter!</div>
+            </div>
+            <div class="top10-rank-bg">#8</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg" alt="Gladiator II" loading="eager" >
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#9</span>
+              <div class="top10-title">EMPIRE OF KINGS</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Historical</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>7.8</span>
+                <span class="top10-badge lang">Hindi</span>
+              </div>
+              <div class="top10-desc">The rise and fall of an empire told like never before.</div>
+            </div>
+            <div class="top10-rank-bg">#9</div>
+          </div>
+        </div>
+        <div class="top10-slide">
+          <div class="top10-card">
+            <img class="bg-poster" onload="this.closest('.top10-card').classList.add('img-ready')" onerror="this.src='https://image.tmdb.org/t/p/w1280/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';this.onerror=null;this.closest('.top10-card').classList.add('img-ready')" src="https://image.tmdb.org/t/p/w1280/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" alt="Movie 10" loading="eager" >
+            <div class="gradient-overlay"></div>
+            <div class="top10-info">
+              <span class="top10-rank">#10</span>
+              <div class="top10-title">THE LOST SIGNAL</div>
+              <div class="top10-meta">
+                <span class="top10-badge genre">Mystery</span>
+                <span class="top10-badge rating"><i class="fas fa-star me-1"></i>7.7</span>
+                <span class="top10-badge lang">English</span>
+              </div>
+              <div class="top10-desc">A gripping mystery that keeps you guessing till the end.</div>
+            </div>
+            <div class="top10-rank-bg">#10</div>
+          </div>
+        </div>
+
+      
+      </div>
+    </div>
+    <button class="carousel-nav carousel-prev" id="carouselPrev"><i class="fas fa-chevron-left"></i></button>
+    <button class="carousel-nav carousel-next" id="carouselNext"><i class="fas fa-chevron-right"></i></button>
+  </div>
+  <div class="carousel-dots" id="carouselDots"></div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="container-fluid px-4">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+      <span class="text-muted fw-semibold small"><i class="fas fa-sliders-h me-1"></i>Filters:</span>
+      <select id="genreSelect" class="form-select form-select-sm" style="width:auto">
+        <option value="">All Genres</option>
+        {% for g in genres %}<option value="{{ g }}" {% if g==selected_genre %}selected{% endif %}>{{ g }}</option>{% endfor %}
+      </select>
+      <select id="langSelect" class="form-select form-select-sm" style="width:auto">
+        <option value="">All Languages</option>
+        {% for l in languages %}<option value="{{ l }}" {% if l==selected_language %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select>
+      {% if selected_genre or selected_language or selected_city or search %}
+        <a href="{{ url_for('public.home') }}" class="btn btn-sm btn-outline-danger ms-auto">
+          <i class="fas fa-times me-1"></i>Clear Filters
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- MOVIES GRID — Infinite Scroll -->
+<div class="container-fluid px-4 py-4" id="movies-section">
+  <div class="section-title d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <i class="fas fa-fire text-danger"></i>
+      {% if search or selected_genre or selected_language or selected_city %}Search Results{% else %}Now Showing{% endif %}
+      {% if search %}<span style="color:var(--red);font-size:.9rem;font-weight:400">"{{ search }}"</span>{% endif %}
+    </div>
+    <span class="badge rounded-pill px-3 py-2" style="background:rgba(229,9,20,.15);color:#ff6b6b;font-size:.82rem;border:1px solid rgba(229,9,20,.3);">
+      <i class="fas fa-ticket-alt me-1"></i> <span id="totalMoviesLabel">{{ movies|length }}</span> movies
+    </span>
+  </div>
+
+  <!-- SSR first batch -->
+  {% if movies %}
+  <div class="movies-grid" id="moviesGrid">
+    {# HD poster pool (w780) — 50 unique posters so no two adjacent cards share the same image #}
+    {% set poster_urls = [
+      'https://image.tmdb.org/t/p/w780/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
+      'https://image.tmdb.org/t/p/w780/d5NXSklXo0qyIYkgV94XAgMIckC.jpg',
+      'https://image.tmdb.org/t/p/w780/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg',
+      'https://image.tmdb.org/t/p/w780/iuFNMS8vlzsH9RTiQFQnZXqiDf9.jpg',
+      'https://image.tmdb.org/t/p/w780/8kNruSfhk5IoE4eZOc4UpvDn6tM.jpg',
+      'https://image.tmdb.org/t/p/w780/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg',
+      'https://image.tmdb.org/t/p/w780/mDfJG3LC3Dqb67AZ52x3Z0jU0uB.jpg',
+      'https://image.tmdb.org/t/p/w780/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',
+      'https://image.tmdb.org/t/p/w780/rktDFPbfHfUbArZ6OOOKsXcv0Bm.jpg',
+      'https://image.tmdb.org/t/p/w780/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+      'https://image.tmdb.org/t/p/w780/hO7KbdvGOtDdeg0W4Y5nKEHeDDh.jpg',
+      'https://image.tmdb.org/t/p/w780/A3ZbZsmsvNGdprRi2lKgGEeVLEH.jpg',
+      'https://image.tmdb.org/t/p/w780/xJHokMbljvjADYdit5fK5VQsXEG.jpg',
+      'https://image.tmdb.org/t/p/w780/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg',
+      'https://image.tmdb.org/t/p/w780/jYEW5xZkZk2WTrdbMGAPFuBqbDc.jpg',
+      'https://image.tmdb.org/t/p/w780/y3NkPMHBBnWbRNnEzBjQX3YJiGY.jpg',
+      'https://image.tmdb.org/t/p/w780/8UlWHLMpgZm9bx6QYrbaiDwmaEL.jpg',
+      'https://image.tmdb.org/t/p/w780/jpurJ9jAcLCYjgHHfYF32m3zJYm.jpg',
+      'https://image.tmdb.org/t/p/w780/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+      'https://image.tmdb.org/t/p/w780/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg',
+      'https://image.tmdb.org/t/p/w780/nkayOAUBUu4mMvyNf9iHSUiPjF1.jpg',
+      'https://image.tmdb.org/t/p/w780/velWPhVMQeQKcxggNEU8YmIo52R.jpg',
+      'https://image.tmdb.org/t/p/w780/d2JyDRPsXkJWA1lUHMHV37g5MrP.jpg',
+      'https://image.tmdb.org/t/p/w780/7lyBcpYB0Qt8gYhXYaEZUNlMkn7.jpg',
+      'https://image.tmdb.org/t/p/w780/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg',
+      'https://image.tmdb.org/t/p/w780/b3kdkeXfOGDHNMyIfnuC9172vNY.jpg',
+      'https://image.tmdb.org/t/p/w780/5KCVkau1HEl7ZzSPeg1kHIX2i5e.jpg',
+      'https://image.tmdb.org/t/p/w780/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg',
+      'https://image.tmdb.org/t/p/w780/6Wdl9N6dL0Hi5T4thkQnD0rMon9.jpg',
+      'https://image.tmdb.org/t/p/w780/pFlaoHTZeyNkG83vxsAJiGzfSsa.jpg',
+      'https://image.tmdb.org/t/p/w780/t6HIqrRAclMCA60NsSbj1HXqNNi.jpg',
+      'https://image.tmdb.org/t/p/w780/sw7mordbZxgITU877yTpZCud90M.jpg',
+      'https://image.tmdb.org/t/p/w780/9Gtg2DzBhmYamXBS1hKAhiwbBKS.jpg',
+      'https://image.tmdb.org/t/p/w780/hEjK9A9BkNXejFW4tfacVAEHtkn.jpg',
+      'https://image.tmdb.org/t/p/w780/aTX8Yz3SZp2hGrMiHkFPHyQMoQT.jpg',
+      'https://image.tmdb.org/t/p/w780/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg',
+      'https://image.tmdb.org/t/p/w780/NNxYkU70HPurnNCSiCjYAmacwm.jpg',
+      'https://image.tmdb.org/t/p/w780/cvsXj3I9Q2iyyIo95AecSd1tad7.jpg',
+      'https://image.tmdb.org/t/p/w780/jRXYjXNq0Cs2TcJjLkki24MLp7u.jpg',
+      'https://image.tmdb.org/t/p/w780/sKCr8MpqwhvmhCDLCjnHnNzP0QJ.jpg',
+      'https://image.tmdb.org/t/p/w780/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
+      'https://image.tmdb.org/t/p/w780/tmU7GeKVybMWFbGe3SXEJ87btiV.jpg',
+      'https://image.tmdb.org/t/p/w780/ckLHMNkSxYJoJDqLJRETFl0BKjt.jpg',
+      'https://image.tmdb.org/t/p/w780/wXSnajAZ5ppTKa8Z5zzWGOK85Ew.jpg',
+      'https://image.tmdb.org/t/p/w780/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg',
+      'https://image.tmdb.org/t/p/w780/sv1xJUazXoQuIDtiys8lyPsdKwi.jpg',
+      'https://image.tmdb.org/t/p/w780/efFRGK3jDIbSYMFpMkWi5dCuTbm.jpg',
+      'https://image.tmdb.org/t/p/w780/qmJGd5IfURq8iPQ9Z13oA4viJML.jpg',
+      'https://image.tmdb.org/t/p/w780/zEciERdxmRuBbvW4HIfNdMhXLDs.jpg',
+      'https://image.tmdb.org/t/p/w780/JjbGGxFHTDQZABxJxGdqlHdRCzw.jpg',
+    ] %}
+    {% for m in movies %}
+    {# Sequential poster: each card gets a different poster — no two adjacent cards share the same image #}
+    {% set _poster_idx = loop.index0 % (poster_urls | length) %}
+    <a href="{{ url_for('public.movie_detail', movie_id=m.movie_id) }}" class="movie-card-wrap text-decoration-none">
+      <div class="movie-card">
+        <div class="movie-poster">
+          <img src="{{ poster_urls[_poster_idx] }}"
+               alt="{{ m.title }}"
+               loading="{% if loop.index0 < 12 %}eager{% else %}lazy{% endif %}"
+               fetchpriority="{% if loop.index0 < 6 %}high{% else %}auto{% endif %}"
+               decoding="async"
+               data-fallback1="https://picsum.photos/seed/cine{{ loop.index0 }}/300/450"
+               data-fallback2="https://picsum.photos/seed/movie{{ loop.index0 + 50 }}/300/450"
+               onload="this.closest('.movie-poster').classList.add('img-ready')"
+               onerror="handlePosterError(this)">
+          <div class="fallback-poster" style="display:none">
+            <i class="fas fa-film"></i>
+            <span>{{ m.title[:20] }}{% if m.title|length>20 %}…{% endif %}</span>
+          </div>
+          {% if m.rating %}<div class="rating-badge"><i class="fas fa-star"></i>{{ "%.1f"|format(m.rating) }}</div>{% endif %}
+          {% if m.language %}<div class="lang-badge">{{ m.language }}</div>{% endif %}
+        </div>
+        <div class="movie-body">
+          <div class="movie-title" title="{{ m.title }}">{{ m.title }}</div>
+          {% if m.show_city %}
+          <div class="movie-city"><i class="fas fa-map-marker-alt me-1" style="color:#e50914;font-size:.7rem;"></i>{{ m.show_city }}</div>
+          {% endif %}
+          {% if m.theatre_name %}
+          <div class="movie-theatre" title="{{ m.theatre_location }}">
+            <i class="fas fa-building me-1" style="color:#888;font-size:.65rem;"></i>
+            <span>{{ m.theatre_name }}</span>
+            {% if m.screen_number %}<span class="movie-screen-badge">{{ m.screen_number }}</span>{% endif %}
+          </div>
+          {% endif %}
+          <div class="movie-tags">
+            {% if m.genre %}<span class="tag tag-genre">{{ m.genre }}</span>{% endif %}
+            {% if m.duration %}<span class="tag tag-dur">{{ m.duration }}m</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div id="moviesGrid" class="movies-grid"></div>
+  <div class="empty-state">
+    <i class="fas fa-film"></i>
+    <h5>No Movies Found</h5>
+    <p>Try adjusting your filters or search term.</p>
+    <a href="{{ url_for('public.home') }}" class="btn btn-danger mt-2">Clear Filters</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Poster error handler: tries TMDB → Picsum → Picsum backup → SVG animal placeholder -->
+<script>
+// Beautiful raccoon-style SVG animal placeholder (original artwork, not copyrighted)
+var ANIMAL_PLACEHOLDER = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1028"/><stop offset="1" stop-color="#0d0d1a"/></linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B6914"/><stop offset="1" stop-color="#5C4008"/></linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8902A"/><stop offset="1" stop-color="#A06820"/></linearGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="45%"><stop offset="0" stop-color="#e5520a" stop-opacity="0.25"/><stop offset="1" stop-color="#1a1028" stop-opacity="0"/></radialGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="300" height="450" fill="url(#bg)"/>
+  <rect width="300" height="450" fill="url(#glow)"/>
+  <!-- Forest bg dots -->
+  <circle cx="50" cy="80" r="18" fill="#1a3a1a" opacity="0.6"/>
+  <circle cx="240" cy="100" r="22" fill="#1a3a1a" opacity="0.5"/>
+  <circle cx="270" cy="200" r="14" fill="#2a4a2a" opacity="0.4"/>
+  <circle cx="30" cy="220" r="16" fill="#2a4a2a" opacity="0.4"/>
+  <!-- Fire sparks -->
+  <ellipse cx="45" cy="180" rx="5" ry="9" fill="#ff6600" opacity="0.7"/>
+  <ellipse cx="255" cy="200" rx="4" ry="8" fill="#ff4400" opacity="0.6"/>
+  <ellipse cx="260" cy="160" rx="3" ry="6" fill="#ffaa00" opacity="0.5"/>
+  <!-- Body / armour -->
+  <ellipse cx="150" cy="330" rx="65" ry="80" fill="#3a3a4a"/>
+  <ellipse cx="150" cy="310" rx="60" ry="65" fill="#2a2a3a"/>
+  <!-- Armour details -->
+  <ellipse cx="150" cy="290" rx="45" ry="50" fill="#4a4a5a"/>
+  <ellipse cx="150" cy="285" rx="35" ry="38" fill="#3a3a4e"/>
+  <rect x="130" y="268" width="40" height="6" rx="3" fill="#5a5a6a" opacity="0.8"/>
+  <circle cx="150" cy="278" r="5" fill="#00aaff" opacity="0.9"/>
+  <!-- Head -->
+  <ellipse cx="150" cy="195" rx="68" ry="65" fill="url(#fur)"/>
+  <!-- Forehead darker stripe -->
+  <ellipse cx="150" cy="165" rx="30" ry="22" fill="#3a2808" opacity="0.6"/>
+  <!-- Face mask (lighter) -->
+  <ellipse cx="150" cy="210" rx="48" ry="42" fill="url(#face)"/>
+  <!-- Eye mask stripes (raccoon-style) -->
+  <ellipse cx="122" cy="195" rx="22" ry="17" fill="#1a0a00" opacity="0.85"/>
+  <ellipse cx="178" cy="195" rx="22" ry="17" fill="#1a0a00" opacity="0.85"/>
+  <!-- Eyes -->
+  <ellipse cx="122" cy="195" rx="13" ry="11" fill="#2a1800"/>
+  <ellipse cx="178" cy="195" rx="13" ry="11" fill="#2a1800"/>
+  <circle cx="122" cy="195" r="8" fill="#1a0a00"/>
+  <circle cx="178" cy="195" r="8" fill="#1a0a00"/>
+  <circle cx="122" cy="193" r="5" fill="#cc6600"/>
+  <circle cx="178" cy="193" r="5" fill="#cc6600"/>
+  <circle cx="122" cy="193" r="3" fill="#111"/>
+  <circle cx="178" cy="193" r="3" fill="#111"/>
+  <!-- Eye shine -->
+  <circle cx="125" cy="191" r="1.5" fill="white" opacity="0.9"/>
+  <circle cx="181" cy="191" r="1.5" fill="white" opacity="0.9"/>
+  <!-- Nose -->
+  <ellipse cx="150" cy="215" rx="10" ry="7" fill="#1a0a00"/>
+  <ellipse cx="148" cy="213" rx="3" ry="2" fill="#3a2a2a" opacity="0.6"/>
+  <!-- Mouth / snout -->
+  <ellipse cx="150" cy="222" rx="18" ry="10" fill="#C8902A" opacity="0.7"/>
+  <!-- Teeth smile -->
+  <path d="M138 221 Q150 232 162 221" stroke="#fff" stroke-width="2" fill="none" opacity="0.6"/>
+  <!-- Ears -->
+  <ellipse cx="95" cy="145" rx="20" ry="24" fill="url(#fur)"/>
+  <ellipse cx="205" cy="145" rx="20" ry="24" fill="url(#fur)"/>
+  <ellipse cx="95" cy="145" rx="11" ry="14" fill="#5C4008" opacity="0.6"/>
+  <ellipse cx="205" cy="145" rx="11" ry="14" fill="#5C4008" opacity="0.6"/>
+  <!-- Baby creature on shoulder (Groot-style) -->
+  <ellipse cx="215" cy="255" rx="16" ry="20" fill="#4a6a2a"/>
+  <ellipse cx="215" cy="243" rx="13" ry="15" fill="#5a7a3a"/>
+  <!-- Baby eyes -->
+  <circle cx="210" cy="241" r="4" fill="#1a0a00"/>
+  <circle cx="220" cy="241" r="4" fill="#1a0a00"/>
+  <circle cx="210" cy="241" r="2.5" fill="#553300"/>
+  <circle cx="220" cy="241" r="2.5" fill="#553300"/>
+  <circle cx="211" cy="240" r="1" fill="white" opacity="0.8"/>
+  <circle cx="221" cy="240" r="1" fill="white" opacity="0.8"/>
+  <!-- Baby arms -->
+  <path d="M202 255 Q195 248 200 242" stroke="#4a6a2a" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M228 255 Q235 248 230 242" stroke="#4a6a2a" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Movie title bar at bottom -->
+  <rect x="0" y="380" width="300" height="70" fill="rgba(0,0,0,0.7)"/>
+  <rect x="20" y="395" width="180" height="10" rx="5" fill="rgba(255,255,255,0.2)"/>
+  <rect x="20" y="413" width="120" height="8" rx="4" fill="rgba(255,255,255,0.12)"/>
+  <!-- CineVerse label -->
+  <rect x="220" y="393" width="60" height="22" rx="6" fill="#e50914" opacity="0.85"/>
+  <text x="250" y="409" font-family="Arial,sans-serif" font-size="9" font-weight="bold" fill="white" text-anchor="middle">CINEVERZE</text>
+</svg>`);
+
+function handlePosterError(img) {
+  var f1 = img.getAttribute('data-fallback1');
+  var f2 = img.getAttribute('data-fallback2');
+  var tried = parseInt(img.getAttribute('data-tried') || '0');
+  img.setAttribute('data-tried', tried + 1);
+  if (tried === 0 && f1) {
+    img.src = f1;
+  } else if (tried === 1 && f2) {
+    img.src = f2;
+  } else {
+    img.src = ANIMAL_PLACEHOLDER;
+    img.onerror = null;
+    img.closest('.movie-poster').classList.add('img-ready');
+  }
+}
+</script>
+
+<!-- Infinite scroll data passed to JS -->
+<script>
+window.MOVIE_SCROLL = {
+  currentPage: 1,
+  hasMore: {{ 'true' if has_more else 'false' }},
+  total: {{ total }},
+  perPage: {{ per_page }},
+  genre: {{ (selected_genre or '') | tojson }},
+  language: {{ (selected_language or '') | tojson }},
+  city: {{ (selected_city or '') | tojson }},
+  search: {{ (search or '') | tojson }},
+  loading: false,
+  cardIndex: {{ movies|length }}   // tracks poster cycling across all loaded cards
+};
+</script>
+
+<!-- WHY CINEVERSE -->
+<div class="why-section">
+  <div class="container py-5">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow">WHY CINEVERSE</div>
+      <h2 class="why-title">The Ultimate Cinema Experience</h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-3 col-6">
+        <div class="why-card">
+          <div class="why-icon"><i class="fas fa-bolt"></i></div>
+          <div class="why-label">Instant Booking</div>
+          <div class="why-desc">Reserve your seats in under 60 seconds</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="why-card">
+          <div class="why-icon"><i class="fas fa-couch"></i></div>
+          <div class="why-label">Choose Your Seat</div>
+          <div class="why-desc">Pick the perfect spot with our seat selector</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="why-card">
+          <div class="why-icon"><i class="fas fa-shield-alt"></i></div>
+          <div class="why-label">Secure Payments</div>
+          <div class="why-desc">Your transactions are always protected</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="why-card">
+          <div class="why-icon"><i class="fas fa-ticket-alt"></i></div>
+          <div class="why-label">Easy Refunds</div>
+          <div class="why-desc">Hassle-free cancellations when you need</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CITY PICKER MODAL -->
+<div id="cityPickerModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);" onclick="closeCityModalOutside(event)">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#13131a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;width:min(700px,95vw);max-height:85vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.8);">
+    <!-- Modal Header -->
+    <div style="padding:20px 24px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h5 style="margin:0;font-size:1.1rem;font-weight:700;color:#fff;"><i class="fas fa-map-marker-alt me-2" style="color:#e50914;"></i>Select Your City</h5>
+        <button onclick="closeCityModal()" style="background:rgba(255,255,255,0.07);border:none;border-radius:50%;width:30px;height:30px;font-size:1.1rem;cursor:pointer;color:rgba(255,255,255,.6);line-height:1;display:flex;align-items:center;justify-content:center;">&times;</button>
+      </div>
+      <!-- Search input inside modal -->
+      <div style="position:relative;margin-bottom:16px;">
+        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.35);font-size:.85rem;"></i>
+        <input type="text" id="citySearchInput" placeholder="Search for your city" oninput="filterCities(this.value)"
+          style="width:100%;padding:11px 12px 11px 36px;border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:.92rem;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.06);color:#fff;transition:border-color .2s;"
+          onfocus="this.style.borderColor='rgba(229,9,20,.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+      </div>
+      <!-- Detect location -->
+      <div style="padding-bottom:14px;">
+        <button onclick="detectLocation()" style="background:none;border:none;color:#e50914;font-size:.88rem;cursor:pointer;font-weight:500;">
+          <i class="fas fa-crosshairs me-1"></i>Detect my location
+        </button>
+      </div>
+    </div>
+    <!-- Popular Cities -->
+    <div style="padding:20px 24px;">
+      <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.1em;margin-bottom:14px;">POPULAR CITIES</div>
+      <div id="popularCitiesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    <!-- All Cities -->
+    <div id="allCitiesSection" style="padding:0 24px 24px;">
+      <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.1em;margin-bottom:14px;">ALL CITIES</div>
+      <div id="allCitiesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    <!-- View All toggle -->
+    <div id="viewAllWrap" style="text-align:center;padding:0 24px 20px;">
+      <button onclick="toggleAllCities()" id="viewAllBtn" style="background:rgba(229,9,20,.1);border:1px solid rgba(229,9,20,.3);color:#e50914;border-radius:20px;padding:7px 20px;font-size:.85rem;cursor:pointer;font-weight:600;transition:all .2s;">
+        View All Cities <i class="fas fa-chevron-down ms-1" style="font-size:.7rem;"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/public.js') }}"></script>
+<style>
+#cityPickerBtn {
+  background: none;
+  border: none;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
+  font-size: .92rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 15px 16px;
+  white-space: nowrap;
+  height: 100%;
+}
+#cityPickerBtn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+.city-modal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all .18s;
+  background: rgba(255,255,255,0.04);
+  text-align: center;
+}
+.city-modal-card:hover, .city-modal-card.selected {
+  border-color: #e50914;
+  background: rgba(229,9,20,0.12);
+}
+.city-modal-card .city-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.city-modal-card .city-name {
+  font-size: .78rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+}
+.city-modal-card:hover .city-name,
+.city-modal-card.selected .city-name {
+  color: #ff4d5a;
+}
+.city-modal-card-sm {
+  padding: 9px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.07);
+  cursor: pointer;
+  text-align: center;
+  font-size: .8rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.6);
+  background: rgba(255,255,255,0.03);
+  transition: all .18s;
+}
+.city-modal-card-sm:hover, .city-modal-card-sm.selected {
+  border-color: #e50914;
+  background: rgba(229,9,20,0.12);
+  color: #ff4d5a;
+}
+</style>
+<script>
+// City icons map — matches BookMyShow dataset cities
+const CITY_ICONS = {
+  'Agra': '🕌', 'Ahmedabad': '🏰', 'Ajmer': '⛩️', 'Amritsar': '🕍',
+  'Asansol': '🏭', 'Bangalore': '🏛️', 'Bathinda': '🌾', 'Belgaum': '🏯',
+  'Bhagalpur': '🌊', 'Bhavnagar': '⛵', 'Bhopal': '🏞️', 'Chennai': '🏯',
+  'Coimbatore': '🌿', 'Durgapur': '🏭', 'Gaya': '🕌', 'Gwalior': '🏰',
+  'Howrah': '🌉', 'Hubli': '🌆', 'Indore': '🌆', 'Jabalpur': '🌳',
+  'Jaipur': '🏰', 'Jalandhar': '🌾', 'Jodhpur': '🏯', 'Kanpur': '🏙️',
+  'Kolkata': '🌉', 'Kota': '🏰', 'Lucknow': '🕌', 'Ludhiana': '🌾',
+  'Madurai': '⛩️', 'Mangalore': '🌴', 'Meerut': '🏙️', 'Mumbai': '🏙️',
+  'Muzaffarpur': '🌿', 'Mysore': '🏯', 'Nagpur': '🍊', 'Nashik': '🍇',
+  'Patiala': '🕌', 'Patna': '🏛️', 'Pune': '⛩️', 'Purnia': '🌾',
+  'Rajkot': '💎', 'Salem': '🌿', 'Siliguri': '🌿', 'Surat': '💎',
+  'Thane': '🏙️', 'Tiruchirappalli': '⛩️', 'Udaipur': '🏰', 'Ujjain': '🕌',
+  'Vadodara': '🎭', 'Varanasi': '🕌',
+};
+// Popular cities shown prominently (well-known metros + top by shows)
+const POPULAR_CITIES = ['Mumbai','Chennai','Kolkata','Jaipur','Bangalore','Pune','Ahmedabad','Lucknow','Nagpur','Surat'];
+const ALL_CITIES = {{ cities | tojson }};
+const currentCity = {{ (selected_city or '') | tojson }};
+let allCitiesVisible = false;
+
+function openCityModal() {
+  document.getElementById('cityPickerModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  renderCities('');
+  setTimeout(() => document.getElementById('citySearchInput').focus(), 100);
+}
+function closeCityModal() {
+  document.getElementById('cityPickerModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function closeCityModalOutside(e) {
+  if (e.target === document.getElementById('cityPickerModal')) closeCityModal();
+}
+function toggleAllCities() {
+  allCitiesVisible = !allCitiesVisible;
+  renderCities(document.getElementById('citySearchInput').value);
+  const btn = document.getElementById('viewAllBtn');
+  btn.innerHTML = allCitiesVisible
+    ? 'Show Less <i class="fas fa-chevron-up ms-1" style="font-size:.75rem;"></i>'
+    : 'View All Cities <i class="fas fa-chevron-down ms-1" style="font-size:.75rem;"></i>';
+}
+function filterCities(q) {
+  renderCities(q);
+}
+function renderCities(q) {
+  const query = q.toLowerCase();
+  const selected = document.getElementById('citySelect').value;
+  // Popular cities grid
+  const popGrid = document.getElementById('popularCitiesGrid');
+  popGrid.innerHTML = '';
+  POPULAR_CITIES.forEach(city => {
+    if (query && !city.toLowerCase().includes(query)) return;
+    const icon = CITY_ICONS[city] || '🏙️';
+    const div = document.createElement('div');
+    div.className = 'city-modal-card' + (city === selected ? ' selected' : '');
+    div.innerHTML = `<div class="city-icon">${icon}</div><div class="city-name">${city}</div>`;
+    div.onclick = () => selectCity(city);
+    popGrid.appendChild(div);
+  });
+  // All cities grid
+  const allGrid = document.getElementById('allCitiesGrid');
+  const allSec = document.getElementById('allCitiesSection');
+  const viewAllWrap = document.getElementById('viewAllWrap');
+  const nonPopular = ALL_CITIES.filter(c => !POPULAR_CITIES.includes(c) && (!query || c.toLowerCase().includes(query)));
+  if (nonPopular.length === 0) { allSec.style.display = 'none'; viewAllWrap.style.display = 'none'; return; }
+  allSec.style.display = 'block';
+  const toShow = (allCitiesVisible || query) ? nonPopular : nonPopular.slice(0, 0);
+  allGrid.innerHTML = '';
+  toShow.forEach(city => {
+    const div = document.createElement('div');
+    div.className = 'city-modal-card-sm' + (city === selected ? ' selected' : '');
+    div.textContent = city;
+    div.onclick = () => selectCity(city);
+    allGrid.appendChild(div);
+  });
+  viewAllWrap.style.display = query ? 'none' : 'block';
+}
+function selectCity(city) {
+  document.getElementById('citySelect').value = city;
+  document.getElementById('cityPickerLabel').textContent = city;
+  closeCityModal();
+  applyFilters(true);
+}
+function detectLocation() {
+  if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    // Simple reverse geocode attempt using city list — just close and filter
+    closeCityModal();
+  }, () => alert('Could not detect location.'));
+}
+</script>
+<script>
+(function() {
+  const carousel = document.getElementById('top10Carousel');
+  const dotsContainer = document.getElementById('carouselDots');
+  const slides = carousel ? carousel.querySelectorAll('.top10-slide') : [];
+  const total = slides.length;
+  let current = 0;
+  let autoTimer;
+  if (!carousel || total === 0) return;
+  // Handle cached bg-poster images (already loaded before JS runs)
+  carousel.querySelectorAll('.bg-poster').forEach(img => {
+    if (img.complete && img.naturalWidth > 0) {
+      img.closest('.top10-card').classList.add('img-ready');
+    }
+  });
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  });
+  function goTo(idx) {
+    current = (idx + total) % total;
+    carousel.style.transform = `translateX(-${current * 100}%)`;
+    dotsContainer.querySelectorAll('.carousel-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+  document.getElementById('carouselNext').addEventListener('click', () => { next(); resetAuto(); });
+  document.getElementById('carouselPrev').addEventListener('click', () => { prev(); resetAuto(); });
+  function startAuto() { autoTimer = setInterval(next, 4500); }
+  function resetAuto() { clearInterval(autoTimer); startAuto(); }
+  startAuto();
+})();
+</script>
+{% endblock %}
